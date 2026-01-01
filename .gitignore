@@ -1,0 +1,54 @@
+### Python & Environment
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Pyenv local environments
+.python-version
+
+# PyInstaller
+*.manifest
+*.spec
+
+# macOS
+.DS_Store
+
+# IDEs and editors
+.idea/
+.vscode/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# dotenv
+.env
+.env/
+
+# Pinecone / project-specific
+node_modules/
+.pinecone/
+
+# Misc
+*.sqlite3
+*.db
+.cache/
+
