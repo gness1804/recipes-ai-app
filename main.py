@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 from typing import Iterable
@@ -72,7 +73,7 @@ def search_recipes(
         fields = hit["fields"]
         print(
             f"- {hit['_id']} ({round(hit['_score'], 2)}): {fields['content'][:80]}… | "
-            f"category={fields.get('category')} prep_time={fields.get('prep_time')}"
+            f"category={fields.get('category')} prep_time={fields.get('prep_time')} rating={fields.get('rating')}"
         )
 
 
@@ -81,16 +82,28 @@ def run_sample_queries(
 ) -> None:
     """Execute a few queries to verify the recommendation path."""
     queries = [
-        "Good seafood recipe that works on a weeknight",
-        "Quick vegetarian dinner with tofu",
-        "Gluten-free sheet pan idea",
-        "Highest rated recipe",
+        "Give me a good seafood recipe that works on a weeknight.",
+        # "Quick vegetarian dinner with tofu",
+        # "Gluten-free sheet pan idea",
+        # "Highest rated recipe",
     ]
 
     for query in queries:
         print("\n" + "=" * 60)
         query_vector = embed_text(query, embedding_model, client)
         search_recipes(index, namespace, query, query_vector)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Seed Pinecone recipes and run a few sample queries."
+    )
+    parser.add_argument(
+        "--skip-upsert",
+        action="store_true",
+        help="Skip the upsert step (useful after initial seed data load).",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
@@ -110,6 +123,7 @@ def main() -> None:
     index = pc.Index(index_name)
     namespace = os.getenv("PINECONE_NAMESPACE", "main_recipes")
 
+    args = parse_args()
     print(f"Connected to Pinecone index: {index_name} (namespace={namespace})")
 
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -117,11 +131,11 @@ def main() -> None:
     if not embedding_model:
         raise ValueError("Error: Please set EMBEDDING_MODEL in your .env file.")
 
-    prepared = embed_records(SEED_RECORDS, embedding_model, client)
-    upsert_vectors(index, namespace, prepared)
-
-    print("Waiting 10 seconds before querying to allow vectors to become queryable.")
-    time.sleep(10)
+    if not args.skip_upsert:
+        prepared = embed_records(SEED_RECORDS, embedding_model, client)
+        upsert_vectors(index, namespace, prepared)
+        print("Waiting 10 seconds before querying to allow vectors to become queryable.")
+        time.sleep(10)
 
     run_sample_queries(index, namespace, client, embedding_model)
 
