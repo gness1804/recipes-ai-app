@@ -5,7 +5,7 @@ from typing import Iterable
 from openai import OpenAI  # type: ignore[import]
 from dotenv import load_dotenv
 from pinecone import Pinecone  # type: ignore[import]
-from utils.embedding_helper import embed_records
+from utils.embedding_helper import embed_records, embed_text
 
 SEED_RECORDS = [
     {
@@ -15,7 +15,7 @@ SEED_RECORDS = [
         "diet": "pescatarian",
         "prep_time": "30m",
         "difficulty": "easy",
-        "rating": 4.5,
+        "rating": "4.5",
     },
     {
         "_id": "sheet-pan-salmon",
@@ -24,7 +24,7 @@ SEED_RECORDS = [
         "diet": "gluten-free",
         "prep_time": "25m",
         "difficulty": "easy",
-        "rating": 4.0,
+        "rating": "4.0",
     },
     {
         "_id": "stir-fry-veg",
@@ -33,7 +33,7 @@ SEED_RECORDS = [
         "diet": "vegetarian",
         "prep_time": "20m",
         "difficulty": "easy",
-        "rating": 3.5,
+        "rating": "3.5",
     },
 ]
 
@@ -44,18 +44,21 @@ def upsert_vectors(index, namespace: str, prepared: Iterable[tuple[str, list[flo
     index.upsert(namespace=namespace, vectors=vectors)
 
 
-def search_recipes(index, namespace: str, user_query: str, top_k: int = 5) -> None:
+def search_recipes(
+    index, namespace: str, user_query: str, query_vector: list[float], top_k: int = 5
+) -> None:
     """Run a reranked search to demonstrate recommendations."""
     reranked = index.search(
         namespace=namespace,
         query={
             "top_k": top_k,
-            "inputs": {"text": user_query},
+            "vector": {"values": query_vector},
         },
         rerank={
             "model": "bge-reranker-v2-m3",
             "top_n": 10,
-            "rank_fields": ["content"],
+            "rank_fields": ["rating"],
+            "query": user_query,
         },
     )
 
@@ -73,7 +76,9 @@ def search_recipes(index, namespace: str, user_query: str, top_k: int = 5) -> No
         )
 
 
-def run_sample_queries(index, namespace: str) -> None:
+def run_sample_queries(
+    index, namespace: str, client: OpenAI, embedding_model: str
+) -> None:
     """Execute a few queries to verify the recommendation path."""
     queries = [
         "Good seafood recipe that works on a weeknight",
@@ -84,7 +89,8 @@ def run_sample_queries(index, namespace: str) -> None:
 
     for query in queries:
         print("\n" + "=" * 60)
-        search_recipes(index, namespace, query)
+        query_vector = embed_text(query, embedding_model, client)
+        search_recipes(index, namespace, query, query_vector)
 
 
 def main() -> None:
@@ -117,7 +123,7 @@ def main() -> None:
     print("Waiting 10 seconds before querying to allow vectors to become queryable.")
     time.sleep(10)
 
-    run_sample_queries(index, namespace)
+    run_sample_queries(index, namespace, client, embedding_model)
 
 
 if __name__ == "__main__":
