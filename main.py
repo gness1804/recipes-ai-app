@@ -58,7 +58,7 @@ def search_recipes(
         rerank={
             "model": "bge-reranker-v2-m3",
             "top_n": 10,
-            "rank_fields": ["rating"],
+            "rank_fields": ["content"],
             "query": user_query,
         },
     )
