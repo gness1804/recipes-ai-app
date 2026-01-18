@@ -1,0 +1,464 @@
+#!/usr/bin/env python3
+"""
+Recipe Transformer Script
+
+Transforms raw recipes from various formats (Markdown, PDF, images) into a
+standardized Markdown format optimized for RAG ingestion.
+
+Usage:
+    python scripts/transform_recipes.py              # Process all (with confirmation)
+    python scripts/transform_recipes.py --limit 5   # Process first 5 recipes
+    python scripts/transform_recipes.py --yes       # Skip confirmation
+    python scripts/transform_recipes.py -d          # Allow reprocessing duplicates
+"""
+
+import argparse
+import base64
+import io
+import os
+import re
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+from openai import OpenAI
+from pdf2image import convert_from_path
+from PIL import Image
+
+# Load environment variables
+load_dotenv()
+
+# Paths
+PROJECT_ROOT = Path(__file__).parent.parent
+RAW_RECIPES_DIR = PROJECT_ROOT / "data" / "raw-recipes"
+PROCESSED_RECIPES_DIR = PROJECT_ROOT / "data" / "processed-recipes"
+MISSING_RATINGS_FILE = PROCESSED_RECIPES_DIR / "_missing_ratings.md"
+
+# Supported file extensions
+MARKDOWN_EXTENSIONS = {".md", ".markdown", ".txt"}
+PDF_EXTENSIONS = {".pdf"}
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+# OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+SYSTEM_PROMPT = """You are a recipe formatting assistant. Your job is to transform raw recipe content into a standardized Markdown format.
+
+## Output Format
+
+You MUST output the recipe in exactly this format:
+
+```
+# [Recipe Name]
+
+Rating: [N]/10
+
+## Ingredients
+
+[If recipe has multiple parts, use H3 headers like "### For the Sauce"]
+- [quantity] [unit] [ingredient], [preparation notes if any]
+- ...
+
+## Instructions
+
+[If recipe has multiple parts, use H3 headers like "### For the Sauce"]
+1. [Step 1]
+2. [Step 2]
+...
+```
+
+## Formatting Rules
+
+### Quantities
+- Convert ALL fractions to decimals: 1/2 → 0.5, 1/4 → 0.25, 3/4 → 0.75, 1/3 → 0.33, 2/3 → 0.67
+- Normalize units:
+  - "T", "Tbsp", "tbsp" → "tablespoons" (or "tablespoon" if singular)
+  - "t", "tsp" → "teaspoons" (or "teaspoon" if singular)
+  - "c", "C" → "cup" or "cups"
+  - "oz" → "oz."
+  - "lb", "lbs" → "lb." or "lbs."
+- Use consistent formatting: "2 tablespoons olive oil" not "2 T olive oil"
+
+### Compound Ingredients (canned goods, etc.)
+- Format: "[quantity] [container] ([size]) [ingredient], [preparation]"
+- Examples:
+  - "1 (15 ounce) can chickpeas" → "1 can (15 oz.) chickpeas"
+  - "2 (14.5 ounce) cans diced tomatoes" → "2 cans (14.5 oz. ea.) diced tomatoes"
+
+### Ingredient Details
+INCLUDE:
+- Quantities (normalized as above)
+- Preparation notes: "chopped", "diced", "minced", "cut into 1-inch cubes"
+- Essential descriptors: "with juice", "drained", "room temperature", "softened"
+- Optional markers: "(optional)" at the end
+
+EXCLUDE:
+- Calorie counts or nutritional information like "(240 cal, 0g protein)"
+- Editorial comments like "use the good stuff" or "I prefer brand X"
+- Recipe totals or summaries
+
+### Multi-Part Recipes
+If a recipe has distinct parts (e.g., a stir-fry and its sauce), use H3 headers:
+```
+## Ingredients
+
+### For the Stir-Fry
+- 1 lb. chicken breast, cut into 1-inch cubes
+...
+
+### For the Peanut Sauce
+- 0.5 cup peanut butter
+...
+
+## Instructions
+
+### For the Stir-Fry
+1. Heat oil in wok...
+
+### For the Peanut Sauce
+1. Combine ingredients...
+```
+
+### Rating
+- If a rating exists in the original, normalize it to X/10 format
+- Convert star ratings: "4 out of 5 stars" → "8/10"
+- If NO rating exists, output exactly: "Rating: [MISSING]"
+
+### What to EXCLUDE from output
+- URLs or source links
+- Editorial commentary or preambles ("This is a great recipe I got from...")
+- "Total ingredients: X" or "Total steps: X" counts
+- Nutritional information
+- Personal notes unrelated to cooking
+
+Output ONLY the formatted recipe. No explanations or additional text."""
+
+
+def slugify(name: str) -> str:
+    """Convert a recipe name to a filename-safe slug."""
+    # Remove special characters, convert to lowercase, replace spaces with hyphens
+    slug = re.sub(r"[^\w\s-]", "", name.lower())
+    slug = re.sub(r"[\s_]+", "-", slug)
+    slug = re.sub(r"-+", "-", slug)
+    return slug.strip("-")
+
+
+def get_raw_recipes() -> list[Path]:
+    """Get all recipe files from the raw recipes directory."""
+    recipes = []
+    for ext in MARKDOWN_EXTENSIONS | PDF_EXTENSIONS | IMAGE_EXTENSIONS:
+        recipes.extend(RAW_RECIPES_DIR.glob(f"*{ext}"))
+    return sorted(recipes)
+
+
+def get_existing_processed_recipes() -> set[str]:
+    """Get slugs of already processed recipes."""
+    existing = set()
+    for file in PROCESSED_RECIPES_DIR.glob("*.md"):
+        if file.name != "_missing_ratings.md":
+            existing.add(file.stem)
+    return existing
+
+
+def encode_image_to_base64(image_path: Path) -> str:
+    """Encode an image file to base64."""
+    with open(image_path, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+
+
+def pil_image_to_base64(image: Image.Image) -> str:
+    """Convert a PIL Image to base64."""
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+
+def get_image_media_type(path: Path) -> str:
+    """Get the media type for an image file."""
+    ext = path.suffix.lower()
+    media_types = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+    }
+    return media_types.get(ext, "image/png")
+
+
+def call_gpt4o_text(content: str) -> str:
+    """Call GPT-4o with text content."""
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"Transform this recipe:\n\n{content}"},
+        ],
+        temperature=0.1,
+        max_tokens=2000,
+    )
+    return response.choices[0].message.content
+
+
+def call_gpt4o_vision(images: list[str], media_type: str = "image/png") -> str:
+    """Call GPT-4o with image content."""
+    image_content = [
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:{media_type};base64,{img}",
+                "detail": "high",
+            },
+        }
+        for img in images
+    ]
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Extract and transform the recipe from this image into the standardized format:",
+                    },
+                    *image_content,
+                ],
+            },
+        ],
+        temperature=0.1,
+        max_tokens=2000,
+    )
+    return response.choices[0].message.content
+
+
+def process_markdown(file_path: Path) -> str:
+    """Process a markdown file."""
+    content = file_path.read_text(encoding="utf-8")
+    return call_gpt4o_text(content)
+
+
+def process_pdf(file_path: Path) -> str:
+    """Process a PDF file by converting pages to images."""
+    # Convert PDF pages to images
+    images = convert_from_path(file_path, dpi=150)
+
+    # Convert PIL images to base64
+    base64_images = [pil_image_to_base64(img) for img in images]
+
+    return call_gpt4o_vision(base64_images)
+
+
+def process_image(file_path: Path) -> str:
+    """Process an image file."""
+    base64_image = encode_image_to_base64(file_path)
+    media_type = get_image_media_type(file_path)
+    return call_gpt4o_vision([base64_image], media_type)
+
+
+def process_recipe(file_path: Path) -> tuple[str, bool]:
+    """
+    Process a recipe file and return the transformed content.
+
+    Returns:
+        tuple: (transformed_content, has_missing_rating)
+    """
+    ext = file_path.suffix.lower()
+
+    if ext in MARKDOWN_EXTENSIONS:
+        result = process_markdown(file_path)
+    elif ext in PDF_EXTENSIONS:
+        result = process_pdf(file_path)
+    elif ext in IMAGE_EXTENSIONS:
+        result = process_image(file_path)
+    else:
+        raise ValueError(f"Unsupported file type: {ext}")
+
+    # Strip markdown code fences if present
+    result = strip_markdown_fences(result)
+
+    # Check for missing rating
+    has_missing_rating = "[MISSING]" in result
+
+    return result, has_missing_rating
+
+
+def strip_markdown_fences(content: str) -> str:
+    """Remove markdown code fences if GPT-4o wrapped the output in them."""
+    content = content.strip()
+    # Remove opening fence (```markdown or ```)
+    if content.startswith("```"):
+        first_newline = content.find("\n")
+        if first_newline != -1:
+            content = content[first_newline + 1 :]
+    # Remove closing fence
+    if content.endswith("```"):
+        content = content[:-3].rstrip()
+    return content
+
+
+def extract_recipe_name(content: str) -> str:
+    """Extract the recipe name from the transformed content."""
+    # Look for the H1 header
+    match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
+    if match:
+        return match.group(1).strip()
+    return "unknown-recipe"
+
+
+def save_processed_recipe(content: str, original_path: Path) -> Path:
+    """Save the processed recipe to the output directory."""
+    recipe_name = extract_recipe_name(content)
+    slug = slugify(recipe_name)
+
+    # Ensure unique filename
+    output_path = PROCESSED_RECIPES_DIR / f"{slug}.md"
+
+    output_path.write_text(content, encoding="utf-8")
+    return output_path
+
+
+def generate_missing_ratings_report(missing_ratings: list[tuple[str, str]]) -> None:
+    """Generate a report of recipes missing ratings."""
+    if not missing_ratings:
+        # Remove the file if it exists and there are no missing ratings
+        if MISSING_RATINGS_FILE.exists():
+            MISSING_RATINGS_FILE.unlink()
+        return
+
+    content = "# Recipes Missing Ratings\n\n"
+    content += "Please add ratings to the following recipes:\n\n"
+
+    for recipe_name, filename in missing_ratings:
+        content += f"- [ ] {recipe_name} (`{filename}`)\n"
+
+    MISSING_RATINGS_FILE.write_text(content, encoding="utf-8")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Transform raw recipes into standardized format for RAG ingestion."
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit the number of recipes to process (default: all)",
+    )
+    parser.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Skip confirmation prompt for batch processing",
+    )
+    parser.add_argument(
+        "--duplicates",
+        "-d",
+        action="store_true",
+        help="Allow reprocessing of already processed recipes",
+    )
+
+    args = parser.parse_args()
+
+    # Ensure output directory exists
+    PROCESSED_RECIPES_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Get all raw recipes
+    raw_recipes = get_raw_recipes()
+
+    if not raw_recipes:
+        print("No raw recipes found in", RAW_RECIPES_DIR)
+        sys.exit(1)
+
+    # Get existing processed recipes
+    existing_slugs = get_existing_processed_recipes()
+
+    # Filter out duplicates if not allowed
+    recipes_to_process = []
+    skipped_duplicates = []
+
+    for recipe_path in raw_recipes:
+        # Generate a temporary slug from filename to check for duplicates
+        temp_slug = slugify(recipe_path.stem)
+
+        if temp_slug in existing_slugs and not args.duplicates:
+            skipped_duplicates.append(recipe_path)
+        else:
+            recipes_to_process.append(recipe_path)
+
+    # Apply limit
+    if args.limit:
+        recipes_to_process = recipes_to_process[: args.limit]
+
+    # Report skipped duplicates
+    for recipe_path in skipped_duplicates:
+        print(
+            f'Skipping "{recipe_path.stem}" - already processed. '
+            "Use --duplicates to reprocess."
+        )
+
+    if not recipes_to_process:
+        print("\nNo new recipes to process.")
+        sys.exit(0)
+
+    # Confirmation prompt for processing all
+    if args.limit is None and not args.yes:
+        print(f"\nAbout to process {len(recipes_to_process)} recipes.")
+        print("This will make API calls to OpenAI GPT-4o.\n")
+        confirm = input("Continue? [y/N]: ").strip().lower()
+        if confirm != "y":
+            print("Aborted.")
+            sys.exit(0)
+
+    # Process recipes
+    processed_count = 0
+    failed_count = 0
+    missing_ratings = []
+
+    print(f"\nProcessing {len(recipes_to_process)} recipes...\n")
+
+    for i, recipe_path in enumerate(recipes_to_process, 1):
+        print(
+            f"[{i}/{len(recipes_to_process)}] Processing: {recipe_path.name}...",
+            end=" ",
+        )
+
+        try:
+            content, has_missing_rating = process_recipe(recipe_path)
+            output_path = save_processed_recipe(content, recipe_path)
+
+            recipe_name = extract_recipe_name(content)
+
+            if has_missing_rating:
+                missing_ratings.append((recipe_name, output_path.name))
+                print(f"Done (MISSING RATING) -> {output_path.name}")
+            else:
+                print(f"Done -> {output_path.name}")
+
+            processed_count += 1
+
+        except Exception as e:
+            print(f"FAILED: {e}")
+            failed_count += 1
+
+    # Generate missing ratings report
+    generate_missing_ratings_report(missing_ratings)
+
+    # Summary
+    print(f"\n{'=' * 50}")
+    print("Summary:")
+    print(f"  Processed: {processed_count}")
+    print(f"  Failed: {failed_count}")
+    print(f"  Skipped (duplicates): {len(skipped_duplicates)}")
+
+    if missing_ratings:
+        print(f"\n  Recipes missing ratings: {len(missing_ratings)}")
+        print(f"  See: {MISSING_RATINGS_FILE}")
+
+    print(f"\nOutput directory: {PROCESSED_RECIPES_DIR}")
+
+
+if __name__ == "__main__":
+    main()

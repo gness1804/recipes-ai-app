@@ -1,0 +1,10 @@
+# Pinecone and OpenAI
+pinecone-client>=3.0.0
+openai>=1.0.0
+
+# PDF processing
+pdf2image>=1.16.0
+Pillow>=10.0.0
+
+# Environment variables
+python-dotenv>=1.0.0

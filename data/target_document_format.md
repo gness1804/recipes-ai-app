@@ -1,15 +1,15 @@
-# NAME: [Recipe Name]
+# [Recipe Name]
 
 Rating: [N]/10
 
-Ingredients:
+## Ingredients
 
-[2 tablespoons canola oil (240 cal, 0g protein, 28g fat)]  
-[1 medium onion (about 6 ounces), chopped]  
-[1 medium red bell pepper (about 6 ounces), chopped]  
-[...]
+- [2 T canola oil]  
+- [1 medium onion, chopped]  
+- [1 medium red bell pepper, chopped]  
+- [...]
 
-Instructions:
+## Instructions
 
 1. [Step 1]
 2. [Step 2]
