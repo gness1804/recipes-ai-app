@@ -15,6 +15,7 @@ Usage:
 import argparse
 import base64
 import io
+import json
 import os
 import re
 import sys
@@ -33,6 +34,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 RAW_RECIPES_DIR = PROJECT_ROOT / "data" / "raw-recipes"
 PROCESSED_RECIPES_DIR = PROJECT_ROOT / "data" / "processed-recipes"
 MISSING_RATINGS_FILE = PROCESSED_RECIPES_DIR / "_missing_ratings.md"
+MANIFEST_FILE = PROCESSED_RECIPES_DIR / "_processed_manifest.json"
 
 # Supported file extensions
 MARKDOWN_EXTENSIONS = {".md", ".markdown", ".txt"}
@@ -151,13 +153,22 @@ def get_raw_recipes() -> list[Path]:
     return sorted(recipes)
 
 
-def get_existing_processed_recipes() -> set[str]:
-    """Get slugs of already processed recipes."""
-    existing = set()
-    for file in PROCESSED_RECIPES_DIR.glob("*.md"):
-        if file.name != "_missing_ratings.md":
-            existing.add(file.stem)
-    return existing
+def load_manifest() -> dict[str, str]:
+    """Load the processed recipes manifest.
+
+    Returns:
+        dict mapping raw filenames to processed filenames
+    """
+    if MANIFEST_FILE.exists():
+        return json.loads(MANIFEST_FILE.read_text(encoding="utf-8"))
+    return {}
+
+
+def save_manifest(manifest: dict[str, str]) -> None:
+    """Save the processed recipes manifest."""
+    MANIFEST_FILE.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
+    )
 
 
 def encode_image_to_base64(image_path: Path) -> str:
@@ -372,18 +383,15 @@ def main():
         print("No raw recipes found in", RAW_RECIPES_DIR)
         sys.exit(1)
 
-    # Get existing processed recipes
-    existing_slugs = get_existing_processed_recipes()
+    # Load manifest of already processed recipes
+    manifest = load_manifest()
 
     # Filter out duplicates if not allowed
     recipes_to_process = []
     skipped_duplicates = []
 
     for recipe_path in raw_recipes:
-        # Generate a temporary slug from filename to check for duplicates
-        temp_slug = slugify(recipe_path.stem)
-
-        if temp_slug in existing_slugs and not args.duplicates:
+        if recipe_path.name in manifest and not args.duplicates:
             skipped_duplicates.append(recipe_path)
         else:
             recipes_to_process.append(recipe_path)
@@ -436,6 +444,10 @@ def main():
                 print(f"Done (MISSING RATING) -> {output_path.name}")
             else:
                 print(f"Done -> {output_path.name}")
+
+            # Update manifest with successful processing
+            manifest[recipe_path.name] = output_path.name
+            save_manifest(manifest)
 
             processed_count += 1
 
