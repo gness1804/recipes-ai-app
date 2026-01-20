@@ -51,7 +51,7 @@ SYSTEM_PROMPT = """You are a recipe formatting assistant. Your job is to transfo
 You MUST output the recipe in exactly this format:
 
 ```
-# [Recipe Name]
+# [Recipe Name - use the provided original title]
 
 Rating: [N]/10
 
@@ -120,6 +120,11 @@ If a recipe has distinct parts (e.g., a stir-fry and its sauce), use H3 headers:
 ### For the Peanut Sauce
 1. Combine ingredients...
 ```
+
+### Recipe Title (H1)
+- IMPORTANT: The user will provide the original recipe title. Use that title for the H1 header.
+- Clean up the title if needed (remove file extensions, fix obvious typos), but preserve the recipe name.
+- Do NOT rename the recipe based on the content - use the provided title.
 
 ### Rating
 - If a rating exists in the original, normalize it to X/10 format
@@ -197,13 +202,14 @@ def get_image_media_type(path: Path) -> str:
     return media_types.get(ext, "image/png")
 
 
-def call_gpt4o_text(content: str) -> str:
+def call_gpt4o_text(content: str, original_title: str) -> str:
     """Call GPT-4o with text content."""
+    user_message = f"Original recipe title: {original_title}\n\nTransform this recipe:\n\n{content}"
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Transform this recipe:\n\n{content}"},
+            {"role": "user", "content": user_message},
         ],
         temperature=0.1,
         max_tokens=2000,
@@ -211,7 +217,9 @@ def call_gpt4o_text(content: str) -> str:
     return response.choices[0].message.content
 
 
-def call_gpt4o_vision(images: list[str], media_type: str = "image/png") -> str:
+def call_gpt4o_vision(
+    images: list[str], original_title: str, media_type: str = "image/png"
+) -> str:
     """Call GPT-4o with image content."""
     image_content = [
         {
@@ -233,7 +241,7 @@ def call_gpt4o_vision(images: list[str], media_type: str = "image/png") -> str:
                 "content": [
                     {
                         "type": "text",
-                        "text": "Extract and transform the recipe from this image into the standardized format:",
+                        "text": f"Original recipe title: {original_title}\n\nExtract and transform the recipe from this image into the standardized format:",
                     },
                     *image_content,
                 ],
@@ -245,13 +253,13 @@ def call_gpt4o_vision(images: list[str], media_type: str = "image/png") -> str:
     return response.choices[0].message.content
 
 
-def process_markdown(file_path: Path) -> str:
+def process_markdown(file_path: Path, original_title: str) -> str:
     """Process a markdown file."""
     content = file_path.read_text(encoding="utf-8")
-    return call_gpt4o_text(content)
+    return call_gpt4o_text(content, original_title)
 
 
-def process_pdf(file_path: Path) -> str:
+def process_pdf(file_path: Path, original_title: str) -> str:
     """Process a PDF file by converting pages to images."""
     # Convert PDF pages to images
     images = convert_from_path(file_path, dpi=150)
@@ -259,14 +267,14 @@ def process_pdf(file_path: Path) -> str:
     # Convert PIL images to base64
     base64_images = [pil_image_to_base64(img) for img in images]
 
-    return call_gpt4o_vision(base64_images)
+    return call_gpt4o_vision(base64_images, original_title)
 
 
-def process_image(file_path: Path) -> str:
+def process_image(file_path: Path, original_title: str) -> str:
     """Process an image file."""
     base64_image = encode_image_to_base64(file_path)
     media_type = get_image_media_type(file_path)
-    return call_gpt4o_vision([base64_image], media_type)
+    return call_gpt4o_vision([base64_image], original_title, media_type)
 
 
 def process_recipe(file_path: Path) -> tuple[str, bool]:
@@ -277,13 +285,15 @@ def process_recipe(file_path: Path) -> tuple[str, bool]:
         tuple: (transformed_content, has_missing_rating)
     """
     ext = file_path.suffix.lower()
+    # Extract original title from filename (without extension)
+    original_title = file_path.stem
 
     if ext in MARKDOWN_EXTENSIONS:
-        result = process_markdown(file_path)
+        result = process_markdown(file_path, original_title)
     elif ext in PDF_EXTENSIONS:
-        result = process_pdf(file_path)
+        result = process_pdf(file_path, original_title)
     elif ext in IMAGE_EXTENSIONS:
-        result = process_image(file_path)
+        result = process_image(file_path, original_title)
     else:
         raise ValueError(f"Unsupported file type: {ext}")
 
@@ -321,8 +331,8 @@ def extract_recipe_name(content: str) -> str:
 
 def save_processed_recipe(content: str, original_path: Path) -> Path:
     """Save the processed recipe to the output directory."""
-    recipe_name = extract_recipe_name(content)
-    slug = slugify(recipe_name)
+    # Use the original filename for the slug to preserve user's naming
+    slug = slugify(original_path.stem)
 
     # Ensure unique filename
     output_path = PROCESSED_RECIPES_DIR / f"{slug}.md"
