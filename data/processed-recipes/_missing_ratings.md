@@ -2,10 +2,9 @@
 
 Please add ratings to the following recipes:
 
+- [ ] Basmati Rice with Sausage and Black Beans (`basmati-rice-with-sausage-and-black-beans.md`)
 - [ ] Biscuits (`biscuits.md`)
-- [ ] Speedy Black Bean Soup (`speedy-black-bean-soup.md`)
 - [ ] Black Soy Bean and Garbanzo Salad (`black-soy-bean-and-garbanzo-salad.md`)
-- [ ] Crispy Sweet Potato Fries (`crispy-sweet-potato-fries.md`)
 - [ ] Cajun Blackened Catfish (`cajun-blackened-catfish.md`)
 - [ ] Caribbean Chicken (`caribbean-chicken.md`)
 - [ ] Caribbean Jerk Stir-Fry (`caribbean-jerk-stir-fry.md`)
@@ -16,7 +15,9 @@ Please add ratings to the following recipes:
 - [ ] Citrus Tilapia (`citrus-tilapia.md`)
 - [ ] Classic Cuban-Style Picadillo (`classic-cuban-style-picadillo.md`)
 - [ ] Coconut-Ginger Salmon with Green Beans (over Jasmine Rice) (`coconut-ginger-salmon-with-green-beans-over-jasmine-rice.md`)
-- [ ] Cuban Chicken (`cuban-chicken.md`)
+- [ ] Crispy Sweet Potato Fries (`crispy-sweet-potato-fries.md`)
 - [ ] Cuban Chicken Stew with Cinnamon (`cuban-chicken-stew-with-cinnamon.md`)
+- [ ] Cuban Chicken (`cuban-chicken.md`)
 - [ ] Cuban-Style Stewed Fish (`cuban-style-stewed-fish.md`)
 - [ ] Easy Cajun Shrimp (`easy-cajun-shrimp.md`)
+- [ ] Speedy Black Bean Soup (`speedy-black-bean-soup.md`)

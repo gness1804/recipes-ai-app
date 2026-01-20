@@ -331,18 +331,105 @@ def save_processed_recipe(content: str, original_path: Path) -> Path:
     return output_path
 
 
-def generate_missing_ratings_report(missing_ratings: list[tuple[str, str]]) -> None:
-    """Generate a report of recipes missing ratings."""
-    if not missing_ratings:
-        # Remove the file if it exists and there are no missing ratings
+def load_existing_missing_ratings() -> dict[str, str]:
+    """Load existing missing ratings from the report file.
+
+    Returns:
+        dict mapping filename to recipe name
+    """
+    if not MISSING_RATINGS_FILE.exists():
+        return {}
+
+    existing = {}
+    content = MISSING_RATINGS_FILE.read_text(encoding="utf-8")
+
+    # Parse lines like: - [ ] Recipe Name (`filename.md`)
+    for line in content.splitlines():
+        if line.startswith("- [ ]"):
+            # Extract recipe name and filename
+            match = re.match(r"- \[ \] (.+) \(`(.+)`\)", line)
+            if match:
+                recipe_name, filename = match.groups()
+                existing[filename] = recipe_name
+
+    return existing
+
+
+def scan_processed_recipes_for_missing_ratings() -> list[tuple[str, str]]:
+    """Scan all processed recipes and find those missing ratings.
+
+    Returns:
+        List of (recipe_name, filename) tuples for recipes missing ratings
+    """
+    missing = []
+
+    for file in sorted(PROCESSED_RECIPES_DIR.glob("*.md")):
+        # Skip special files
+        if file.name.startswith("_"):
+            continue
+
+        content = file.read_text(encoding="utf-8")
+
+        # Extract recipe name from H1 header
+        recipe_name = file.stem.replace("-", " ").title()
+        for line in content.splitlines():
+            if line.startswith("# "):
+                recipe_name = line[2:].strip()
+                break
+
+        # Check for missing rating
+        has_missing_rating = False
+        has_rating_field = False
+
+        for line in content.splitlines():
+            if line.startswith("Rating:"):
+                has_rating_field = True
+                if "[MISSING]" in line:
+                    has_missing_rating = True
+                break
+
+        # Missing if explicitly marked or no rating field at all
+        if has_missing_rating or not has_rating_field:
+            missing.append((recipe_name, file.name))
+
+    return missing
+
+
+def generate_missing_ratings_report(
+    new_missing: list[tuple[str, str]],
+    now_have_ratings: list[str],
+) -> None:
+    """Generate a report of recipes missing ratings.
+
+    Args:
+        new_missing: List of (recipe_name, filename) tuples for newly processed
+            recipes that are missing ratings
+        now_have_ratings: List of filenames for recipes that were reprocessed
+            and now have ratings (to remove from the report)
+    """
+    # Load existing entries
+    existing = load_existing_missing_ratings()
+
+    # Remove recipes that now have ratings
+    for filename in now_have_ratings:
+        existing.pop(filename, None)
+
+    # Add new missing ratings
+    for recipe_name, filename in new_missing:
+        existing[filename] = recipe_name
+
+    # If nothing is missing, remove the file
+    if not existing:
         if MISSING_RATINGS_FILE.exists():
             MISSING_RATINGS_FILE.unlink()
         return
 
+    # Write combined report
     content = "# Recipes Missing Ratings\n\n"
     content += "Please add ratings to the following recipes:\n\n"
 
-    for recipe_name, filename in missing_ratings:
+    for filename in sorted(existing.keys()):
+        recipe_name = existing[filename]
         content += f"- [ ] {recipe_name} (`{filename}`)\n"
 
     MISSING_RATINGS_FILE.write_text(content, encoding="utf-8")
@@ -370,11 +457,38 @@ def main():
         action="store_true",
         help="Allow reprocessing of already processed recipes",
     )
+    parser.add_argument(
+        "--scan-ratings",
+        action="store_true",
+        help="Scan all processed recipes for missing ratings and update the report",
+    )
 
     args = parser.parse_args()
 
     # Ensure output directory exists
     PROCESSED_RECIPES_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Handle --scan-ratings flag
+    if args.scan_ratings:
+        print("Scanning processed recipes for missing ratings...")
+        missing = scan_processed_recipes_for_missing_ratings()
+
+        if missing:
+            # Write the report (replaces existing content entirely)
+            content = "# Recipes Missing Ratings\n\n"
+            content += "Please add ratings to the following recipes:\n\n"
+            for recipe_name, filename in missing:
+                content += f"- [ ] {recipe_name} (`{filename}`)\n"
+            MISSING_RATINGS_FILE.write_text(content, encoding="utf-8")
+
+            print(f"Found {len(missing)} recipes missing ratings.")
+            print(f"Report saved to: {MISSING_RATINGS_FILE}")
+        else:
+            if MISSING_RATINGS_FILE.exists():
+                MISSING_RATINGS_FILE.unlink()
+            print("All recipes have ratings!")
+
+        sys.exit(0)
 
     # Get all raw recipes
     raw_recipes = get_raw_recipes()
@@ -424,6 +538,7 @@ def main():
     processed_count = 0
     failed_count = 0
     missing_ratings = []
+    now_have_ratings = []  # Track recipes that were reprocessed and now have ratings
 
     print(f"\nProcessing {len(recipes_to_process)} recipes...\n")
 
@@ -443,6 +558,8 @@ def main():
                 missing_ratings.append((recipe_name, output_path.name))
                 print(f"Done (MISSING RATING) -> {output_path.name}")
             else:
+                # Track this so we can remove it from missing ratings if it was there before
+                now_have_ratings.append(output_path.name)
                 print(f"Done -> {output_path.name}")
 
             # Update manifest with successful processing
@@ -456,7 +573,7 @@ def main():
             failed_count += 1
 
     # Generate missing ratings report
-    generate_missing_ratings_report(missing_ratings)
+    generate_missing_ratings_report(missing_ratings, now_have_ratings)
 
     # Summary
     print(f"\n{'=' * 50}")
