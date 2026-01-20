@@ -35,4 +35,5 @@ Please add ratings to the following recipes:
 - [ ] Cuban-Style Stewed Fish (`cubanstylestewedfishdocx.md`)
 - [ ] Easy Cajun Shrimp (`easy-cajun-shrimp.md`)
 - [ ] Easy Feijoada Recipe (Brazilian Black Bean Stew) (`easy-feijoada-recipe-brazilian-black-bean-stew.md`)
+- [ ] Gumbo (`gumbo.md`)
 - [ ] Speedy Black Bean Soup (`speedy-black-bean-soup.md`)
