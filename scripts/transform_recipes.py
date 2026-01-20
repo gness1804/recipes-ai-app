@@ -538,6 +538,9 @@ def main():
     # Confirmation prompt for processing all
     if args.limit is None and not args.yes:
         print(f"\nAbout to process {len(recipes_to_process)} recipes.")
+        # Print all the recipes to be processed just by name. 
+        for recipe_path in recipes_to_process:
+            print(recipe_path.name)
         print("This will make API calls to OpenAI GPT-4o.\n")
         confirm = input("Continue? [y/N]: ").strip().lower()
         if confirm != "y":

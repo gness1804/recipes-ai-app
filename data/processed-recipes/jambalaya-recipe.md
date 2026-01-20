@@ -14,12 +14,12 @@ Rating: [MISSING]
 - 0.5 teaspoon onion powder
 - 0.25 teaspoon dried oregano
 - 0.25 teaspoon dried thyme
-- 0.5 teaspoon black pepper
+- 0.25 teaspoon black pepper
 - Ground cayenne pepper or Tabasco sauce, to taste (optional)
 - 1 can (15 oz.) white beans, such as Great Northern
 - 1 can (15 oz.) black beans
 - 1 can (14.5 oz.) stewed tomatoes
-- 0.5 cup frozen small shrimp (see box)
+- 0.5 cup frozen small shrimp
 
 ## Instructions
 
