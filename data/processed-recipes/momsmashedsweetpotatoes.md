@@ -1,4 +1,4 @@
-# MomsMashedSweetPotatoes
+# Moms Mashed Sweet Potatoes
 
 Rating: [MISSING]
 

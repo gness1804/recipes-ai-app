@@ -1,4 +1,4 @@
-# Redbeansandriceburritos
+# Red Beans and Rice Burritos
 
 Rating: [MISSING]
 

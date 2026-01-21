@@ -1,4 +1,4 @@
-# Tacoseasoning
+# Taco Seasoning
 
 Rating: 7/10
 
