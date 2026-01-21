@@ -428,6 +428,13 @@ def generate_missing_ratings_report(
     for recipe_name, filename in new_missing:
         existing[filename] = recipe_name
 
+    # Filter out entries for files that no longer exist (handles renamed/deleted files)
+    existing = {
+        filename: recipe_name
+        for filename, recipe_name in existing.items()
+        if (PROCESSED_RECIPES_DIR / filename).exists()
+    }
+
     # If nothing is missing, remove the file
     if not existing:
         if MISSING_RATINGS_FILE.exists():
@@ -443,6 +450,59 @@ def generate_missing_ratings_report(
         content += f"- [ ] {recipe_name} (`{filename}`)\n"
 
     MISSING_RATINGS_FILE.write_text(content, encoding="utf-8")
+
+
+def normalize_filenames() -> list[tuple[str, str]]:
+    """Normalize processed recipe filenames to match their H1 header slugs.
+
+    Returns:
+        List of (old_filename, new_filename) tuples for files that were renamed.
+    """
+    renamed = []
+    manifest = load_manifest()
+    manifest_updated = False
+
+    for file in sorted(PROCESSED_RECIPES_DIR.glob("*.md")):
+        # Skip special files
+        if file.name.startswith("_"):
+            continue
+
+        content = file.read_text(encoding="utf-8")
+
+        # Extract recipe name from H1 header
+        recipe_name = extract_recipe_name(content)
+        if recipe_name == "unknown-recipe":
+            print(f"  Warning: Could not extract H1 from {file.name}, skipping")
+            continue
+
+        # Generate expected slug
+        expected_slug = slugify(recipe_name)
+        expected_filename = f"{expected_slug}.md"
+
+        # Check if rename is needed
+        if file.name != expected_filename:
+            new_path = PROCESSED_RECIPES_DIR / expected_filename
+
+            # Check for conflicts
+            if new_path.exists() and new_path != file:
+                print(f"  Warning: Cannot rename {file.name} -> {expected_filename} (file exists)")
+                continue
+
+            # Rename the file
+            file.rename(new_path)
+            renamed.append((file.name, expected_filename))
+
+            # Update manifest entries that point to the old filename
+            for raw_name, processed_name in list(manifest.items()):
+                if processed_name == file.name:
+                    manifest[raw_name] = expected_filename
+                    manifest_updated = True
+
+    # Save updated manifest
+    if manifest_updated:
+        save_manifest(manifest)
+
+    return renamed
 
 
 def main():
@@ -472,6 +532,11 @@ def main():
         action="store_true",
         help="Scan all processed recipes for missing ratings and update the report",
     )
+    parser.add_argument(
+        "--normalize",
+        action="store_true",
+        help="Normalize filenames by renaming files to match their H1 header slugs",
+    )
 
     args = parser.parse_args()
 
@@ -497,6 +562,21 @@ def main():
             if MISSING_RATINGS_FILE.exists():
                 MISSING_RATINGS_FILE.unlink()
             print("All recipes have ratings!")
+
+        sys.exit(0)
+
+    # Handle --normalize flag
+    if args.normalize:
+        print("Normalizing processed recipe filenames...")
+        renamed = normalize_filenames()
+
+        if renamed:
+            print(f"\nRenamed {len(renamed)} files:")
+            for old_name, new_name in renamed:
+                print(f"  {old_name} -> {new_name}")
+            print(f"\nManifest updated: {MANIFEST_FILE}")
+        else:
+            print("All filenames are already normalized.")
 
         sys.exit(0)
 
