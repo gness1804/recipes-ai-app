@@ -1,0 +1,28 @@
+Sesame Noodle Salad
+
+Use fewer noodles.
+
+1 (16 ounce) package angel hair pasta (use 1/2 pack for better taste)  
+1/2 cup sesame oil  
+1/2 cup soy sauce  
+1/4 cup balsamic vinegar  
+1 tablespoon hot chili oil  
+1/4 cup white sugar  
+1 teaspoon sesame seeds, or more if desired  
+1 green onion, chopped  
+1 red bell pepper, diced  
+(Optional) Broccoli
+
+GERD version:  
+Angel hair pasta  
+Sesame oil   
+Teriyaki sauce (sub for soy sauce)  
+Sugar/honey  
+Sesame seeds   
+Green onion (green part only)  
+Red bell pepper 
+
+Fill a large pot with lightly salted water and bring to a rolling boil over high heat. Once the water is boiling, stir in the angel hair pasta, and return to a boil. Cook the pasta uncovered, stirring occasionally, until the pasta has cooked through, but is still firm to the bite, 4 to 5 minutes. Drain well in a colander set in the sink.
+
+Whisk together the sesame oil, soy sauce, balsamic vinegar, chili oil, and sugar in a large bowl. Toss the pasta in the dressing, then sprinkle with sesame seeds, green onion, and bell pepper. Serve warm, or cover and refrigerate for a cold salad.
+
