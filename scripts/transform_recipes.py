@@ -35,6 +35,7 @@ RAW_RECIPES_DIR = PROJECT_ROOT / "data" / "raw-recipes"
 PROCESSED_RECIPES_DIR = PROJECT_ROOT / "data" / "processed-recipes"
 MISSING_RATINGS_FILE = PROCESSED_RECIPES_DIR / "_missing_ratings.md"
 MANIFEST_FILE = PROCESSED_RECIPES_DIR / "_processed_manifest.json"
+RATINGS_FILE = PROCESSED_RECIPES_DIR / "_ratings.json"
 
 # Supported file extensions
 MARKDOWN_EXTENSIONS = {".md", ".markdown", ".txt"}
@@ -174,6 +175,37 @@ def save_manifest(manifest: dict[str, str]) -> None:
     MANIFEST_FILE.write_text(
         json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
     )
+
+
+def load_ratings() -> dict[str, int | None]:
+    """Load manual ratings from the ratings JSON file.
+
+    Returns:
+        dict mapping filenames to ratings (int or None if not yet rated)
+    """
+    if RATINGS_FILE.exists():
+        return json.loads(RATINGS_FILE.read_text(encoding="utf-8"))
+    return {}
+
+
+def save_ratings(ratings: dict[str, int | None]) -> None:
+    """Save manual ratings to the ratings JSON file."""
+    RATINGS_FILE.write_text(
+        json.dumps(ratings, indent=2, sort_keys=True), encoding="utf-8"
+    )
+
+
+def apply_rating_to_content(content: str, rating: int) -> str:
+    """Replace [MISSING] rating with the actual rating value.
+
+    Args:
+        content: The recipe content with Rating: [MISSING]
+        rating: The rating value to apply (1-10)
+
+    Returns:
+        Content with the rating applied
+    """
+    return re.sub(r"Rating:\s*\[MISSING\]", f"Rating: {rating}/10", content)
 
 
 def encode_image_to_base64(image_path: Path) -> str:
@@ -329,13 +361,31 @@ def extract_recipe_name(content: str) -> str:
     return "unknown-recipe"
 
 
-def save_processed_recipe(content: str, original_path: Path) -> Path:
-    """Save the processed recipe to the output directory."""
+def save_processed_recipe(content: str, original_path: Path, ratings: dict[str, int | None] | None = None) -> Path:
+    """Save the processed recipe to the output directory.
+
+    If the content has a [MISSING] rating and a manual rating exists in the
+    ratings file, the manual rating will be applied.
+
+    Args:
+        content: The processed recipe content
+        original_path: Path to the original raw recipe file
+        ratings: Optional pre-loaded ratings dict (loaded if not provided)
+
+    Returns:
+        Path to the saved processed recipe
+    """
     # Use the original filename for the slug to preserve user's naming
     slug = slugify(original_path.stem)
-
-    # Ensure unique filename
     output_path = PROCESSED_RECIPES_DIR / f"{slug}.md"
+    filename = output_path.name
+
+    # Apply manual rating if available and content has [MISSING]
+    if "[MISSING]" in content:
+        if ratings is None:
+            ratings = load_ratings()
+        if filename in ratings and ratings[filename] is not None:
+            content = apply_rating_to_content(content, ratings[filename])
 
     output_path.write_text(content, encoding="utf-8")
     return output_path
@@ -368,10 +418,15 @@ def load_existing_missing_ratings() -> dict[str, str]:
 def scan_processed_recipes_for_missing_ratings() -> list[tuple[str, str]]:
     """Scan all processed recipes and find those missing ratings.
 
+    A recipe is considered missing a rating if:
+    1. The file has [MISSING] or no Rating: field, AND
+    2. There's no valid rating in _ratings.json for that file
+
     Returns:
         List of (recipe_name, filename) tuples for recipes missing ratings
     """
     missing = []
+    ratings = load_ratings()
 
     for file in sorted(PROCESSED_RECIPES_DIR.glob("*.md")):
         # Skip special files
@@ -387,7 +442,7 @@ def scan_processed_recipes_for_missing_ratings() -> list[tuple[str, str]]:
                 recipe_name = line[2:].strip()
                 break
 
-        # Check for missing rating
+        # Check for missing rating in the file
         has_missing_rating = False
         has_rating_field = False
 
@@ -398,8 +453,11 @@ def scan_processed_recipes_for_missing_ratings() -> list[tuple[str, str]]:
                     has_missing_rating = True
                 break
 
-        # Missing if explicitly marked or no rating field at all
-        if has_missing_rating or not has_rating_field:
+        # Check if rating exists in the ratings file
+        has_manual_rating = file.name in ratings and ratings[file.name] is not None
+
+        # Missing if (explicitly marked or no rating field) AND no manual rating
+        if (has_missing_rating or not has_rating_field) and not has_manual_rating:
             missing.append((recipe_name, file.name))
 
     return missing
@@ -537,6 +595,11 @@ def main():
         action="store_true",
         help="Normalize filenames by renaming files to match their H1 header slugs",
     )
+    parser.add_argument(
+        "--apply-ratings",
+        action="store_true",
+        help="Apply ratings from _ratings.json to existing processed recipes",
+    )
 
     args = parser.parse_args()
 
@@ -577,6 +640,44 @@ def main():
             print(f"\nManifest updated: {MANIFEST_FILE}")
         else:
             print("All filenames are already normalized.")
+
+        sys.exit(0)
+
+    # Handle --apply-ratings flag
+    if args.apply_ratings:
+        print("Applying ratings from _ratings.json to processed recipes...")
+        ratings = load_ratings()
+
+        if not ratings:
+            print("No ratings file found or file is empty.")
+            sys.exit(1)
+
+        applied_count = 0
+        for file in sorted(PROCESSED_RECIPES_DIR.glob("*.md")):
+            # Skip special files
+            if file.name.startswith("_"):
+                continue
+
+            if file.name not in ratings or ratings[file.name] is None:
+                continue
+
+            content = file.read_text(encoding="utf-8")
+
+            # Check if this file has a [MISSING] rating
+            if "[MISSING]" not in content:
+                continue
+
+            # Apply the rating
+            new_content = apply_rating_to_content(content, ratings[file.name])
+            file.write_text(new_content, encoding="utf-8")
+            print(f"  Applied rating {ratings[file.name]}/10 to {file.name}")
+            applied_count += 1
+
+        if applied_count > 0:
+            print(f"\nApplied ratings to {applied_count} recipes.")
+            print("Run --scan-ratings to update the missing ratings report.")
+        else:
+            print("No ratings to apply (either no ratings in file or all recipes already have ratings).")
 
         sys.exit(0)
 
@@ -633,6 +734,9 @@ def main():
     missing_ratings = []
     now_have_ratings = []  # Track recipes that were reprocessed and now have ratings
 
+    # Load manual ratings once for efficiency
+    manual_ratings = load_ratings()
+
     print(f"\nProcessing {len(recipes_to_process)} recipes...\n")
 
     for i, recipe_path in enumerate(recipes_to_process, 1):
@@ -643,13 +747,23 @@ def main():
 
         try:
             content, has_missing_rating = process_recipe(recipe_path)
-            output_path = save_processed_recipe(content, recipe_path)
+            output_path = save_processed_recipe(content, recipe_path, manual_ratings)
 
             recipe_name = extract_recipe_name(content)
 
-            if has_missing_rating:
+            # Check if manual rating was applied (GPT returned [MISSING] but we had a rating)
+            has_manual_rating = (
+                output_path.name in manual_ratings
+                and manual_ratings[output_path.name] is not None
+            )
+
+            if has_missing_rating and not has_manual_rating:
                 missing_ratings.append((recipe_name, output_path.name))
                 print(f"Done (MISSING RATING) -> {output_path.name}")
+            elif has_missing_rating and has_manual_rating:
+                # Manual rating was applied
+                now_have_ratings.append(output_path.name)
+                print(f"Done (applied manual rating) -> {output_path.name}")
             else:
                 # Track this so we can remove it from missing ratings if it was there before
                 now_have_ratings.append(output_path.name)
