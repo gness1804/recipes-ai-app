@@ -1,3 +1,6 @@
+---
+github_issue: 4
+---
 # Transform Recipes Data For RAG Vector Database Ingestion
 
 ## Working directory
