@@ -14,4 +14,6 @@ Now that I've added all the recipes to my list, for the MVP anyway, I need to ra
 ## Acceptance criteria
 
 - All recipes shall have a 1-10 rating. 
-- Be the possibility of a rating such as "N" which would signify that I have not yet tried the recipe. If so, I might need to upgrade the logic in the transform recipe script to accommodate that. 
+- Be the possibility of a rating such as "N" which would signify that I have not yet tried the recipe. If so, I might need to upgrade the logic in the transform recipe script to accommodate that.
+
+<!-- DONE -->
