@@ -1,6 +1,6 @@
 # Caribbean Chicken
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

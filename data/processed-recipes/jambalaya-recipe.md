@@ -1,6 +1,6 @@
 # Jambalaya recipe
 
-Rating: [MISSING]
+Rating: 8.5/10
 
 ## Ingredients
 

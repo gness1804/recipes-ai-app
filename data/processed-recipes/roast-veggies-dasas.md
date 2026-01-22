@@ -1,6 +1,6 @@
 # Roast veggies (Dasas)
 
-Rating: [MISSING]
+Rating: 7.5/10
 
 ## Ingredients
 

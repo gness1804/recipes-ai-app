@@ -1,6 +1,6 @@
 # Roasted New Red Potatoes
 
-Rating: [MISSING]
+Rating: 6.5/10
 
 ## Ingredients
 

@@ -1,6 +1,6 @@
 # Crispy Sweet Potato Fries
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

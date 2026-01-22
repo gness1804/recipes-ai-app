@@ -1,6 +1,6 @@
 # Peanut sauce
 
-Rating: [MISSING]
+Rating: 9.5/10
 
 ## Ingredients
 

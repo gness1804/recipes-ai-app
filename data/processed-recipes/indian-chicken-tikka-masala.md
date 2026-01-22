@@ -1,6 +1,6 @@
 # Indian Chicken Tikka Masala
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

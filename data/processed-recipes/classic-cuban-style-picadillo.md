@@ -1,6 +1,6 @@
 # Classic Cuban-Style Picadillo
 
-Rating: [MISSING]
+Rating: 6.5/10
 
 ## Ingredients
 

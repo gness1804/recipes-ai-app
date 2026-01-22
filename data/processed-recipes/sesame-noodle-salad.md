@@ -1,6 +1,6 @@
 # Sesame Noodle Salad
 
-Rating: [MISSING]
+Rating: 5.5/10
 
 ## Ingredients
 

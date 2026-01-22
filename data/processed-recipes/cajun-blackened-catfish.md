@@ -1,6 +1,6 @@
 # Cajun Blackened Catfish
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

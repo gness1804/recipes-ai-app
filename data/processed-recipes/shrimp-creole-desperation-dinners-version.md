@@ -1,6 +1,6 @@
 # Shrimp Creole Desperation Dinners Version
 
-Rating: [MISSING]
+Rating: 6/10
 
 ## Ingredients
 

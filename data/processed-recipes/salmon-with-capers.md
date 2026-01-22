@@ -1,6 +1,6 @@
 # Salmon with capers
 
-Rating: [MISSING]
+Rating: 6/10
 
 ## Ingredients
 

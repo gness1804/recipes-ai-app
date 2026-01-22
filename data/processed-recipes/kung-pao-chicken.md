@@ -1,6 +1,6 @@
 # Kung Pao Chicken
 
-Rating: [MISSING]
+Rating: 5/10
 
 ## Ingredients
 

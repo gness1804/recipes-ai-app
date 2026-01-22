@@ -1,6 +1,6 @@
 # Quick and Easy Vegetable Soup
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

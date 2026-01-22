@@ -1,6 +1,6 @@
 # Cuban Chicken Stew with Cinnamon
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

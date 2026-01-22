@@ -1,6 +1,6 @@
 # spaghetti w clam sauce
 
-Rating: [MISSING]
+Rating: 10/10
 
 ## Ingredients
 

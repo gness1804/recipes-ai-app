@@ -1,6 +1,6 @@
 # Marinara with White Wine
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

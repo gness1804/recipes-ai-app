@@ -1,6 +1,6 @@
 # Easy Feijoada Recipe (Brazilian Black Bean Stew)
 
-Rating: [MISSING]
+Rating: 6/10
 
 ## Ingredients
 

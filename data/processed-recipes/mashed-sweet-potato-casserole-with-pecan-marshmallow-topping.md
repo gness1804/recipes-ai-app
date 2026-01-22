@@ -1,6 +1,6 @@
 # Mashed Sweet Potato Casserole with Pecan & Marshmallow Topping
 
-Rating: [MISSING]
+Rating: 6.5/10
 
 ## Ingredients
 

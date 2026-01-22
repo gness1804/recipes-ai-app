@@ -1,6 +1,6 @@
 # Easy Cajun Shrimp
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

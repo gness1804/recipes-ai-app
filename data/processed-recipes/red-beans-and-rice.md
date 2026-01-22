@@ -1,6 +1,6 @@
 # Red Beans and Rice
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

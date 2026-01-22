@@ -1,6 +1,6 @@
 # Mango Salad
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

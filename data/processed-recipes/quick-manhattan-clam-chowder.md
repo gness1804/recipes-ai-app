@@ -1,6 +1,6 @@
 # Quick Manhattan Clam Chowder
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

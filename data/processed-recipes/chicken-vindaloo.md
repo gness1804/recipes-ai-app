@@ -1,6 +1,6 @@
 # Chicken Vindaloo
 
-Rating: [MISSING]
+Rating: 5/10
 
 ## Ingredients
 

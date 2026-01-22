@@ -1,6 +1,6 @@
 # Moms classic spaghetti
 
-Rating: [MISSING]
+Rating: 9.5/10
 
 ## Ingredients
 

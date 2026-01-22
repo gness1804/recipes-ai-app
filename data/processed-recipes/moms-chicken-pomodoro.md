@@ -1,6 +1,6 @@
 # Mom's Chicken Pomodoro
 
-Rating: [MISSING]
+Rating: 7/10
 
 ## Ingredients
 

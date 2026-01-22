@@ -1,6 +1,6 @@
 # Citrus Tilapia
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

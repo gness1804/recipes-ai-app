@@ -1,6 +1,6 @@
 # Chicken with Walnuts
 
-Rating: [MISSING]
+Rating: 7/10
 
 ## Ingredients
 

@@ -1,6 +1,6 @@
 # Holly candy (from Mom)
 
-Rating: [MISSING]
+Rating: 10/10
 
 ## Ingredients
 

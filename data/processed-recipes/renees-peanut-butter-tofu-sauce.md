@@ -1,6 +1,6 @@
 # Renee's Peanut Butter Tofu Sauce
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

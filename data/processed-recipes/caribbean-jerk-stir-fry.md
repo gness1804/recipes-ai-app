@@ -1,6 +1,6 @@
 # Caribbean Jerk Stir-Fry
 
-Rating: [MISSING]
+Rating: 6.5/10
 
 ## Ingredients
 

@@ -1,6 +1,6 @@
 # Cuban-Style Stewed Fish
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

@@ -1,6 +1,6 @@
 # Roast
 
-Rating: [MISSING]
+Rating: 9/10
 
 ## Ingredients
 

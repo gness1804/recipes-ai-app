@@ -1,6 +1,6 @@
 # Coconut-Ginger Salmon with Green Beans (over Jasmine Rice)
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

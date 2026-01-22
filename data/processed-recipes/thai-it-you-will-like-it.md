@@ -1,6 +1,6 @@
 # Thai it, you will like it
 
-Rating: [MISSING]
+Rating: 6.5/10
 
 ## Ingredients
 

@@ -1,6 +1,6 @@
 # Indonesian Curried Vegetables
 
-Rating: [MISSING]
+Rating: 7.5/10
 
 ## Ingredients
 

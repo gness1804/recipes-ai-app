@@ -1,6 +1,6 @@
 # Renee's spinach curry
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

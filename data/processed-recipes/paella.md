@@ -1,6 +1,6 @@
 # Paella
 
-Rating: [MISSING]
+Rating: 8/10
 
 ## Ingredients
 

@@ -1,6 +1,6 @@
 # Chocolate_caramel_brownies
 
-Rating: [MISSING]
+Rating: 9/10
 
 ## Ingredients
 

@@ -1,6 +1,6 @@
 # Yogurt-Marinated Chicken Shawarma
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

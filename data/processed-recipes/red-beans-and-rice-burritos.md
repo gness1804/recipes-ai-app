@@ -1,6 +1,6 @@
 # Red Beans and Rice Burritos
 
-Rating: [MISSING]
+Rating: 5/10
 
 ## Ingredients
 

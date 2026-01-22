@@ -1,6 +1,6 @@
 # salsa beans and rice
 
-Rating: [MISSING]
+Rating: 7/10
 
 ## Ingredients
 

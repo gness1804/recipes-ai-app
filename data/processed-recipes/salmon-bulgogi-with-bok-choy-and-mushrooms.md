@@ -1,6 +1,6 @@
 # Salmon Bulgogi with Bok Choy and Mushrooms
 
-Rating: [MISSING]
+Rating: 8.5/10
 
 ## Ingredients
 

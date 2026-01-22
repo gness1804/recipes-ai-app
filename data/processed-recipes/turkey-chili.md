@@ -1,6 +1,6 @@
 # Turkey chili
 
-Rating: [MISSING]
+Rating: 6/10
 
 ## Ingredients
 

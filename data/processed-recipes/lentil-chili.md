@@ -1,6 +1,6 @@
 # Lentil Chili
 
-Rating: [MISSING]
+Rating: 4.5/10
 
 ## Ingredients
 

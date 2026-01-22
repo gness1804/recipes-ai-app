@@ -1,6 +1,6 @@
 # shrimp creole (mom version)
 
-Rating: [MISSING]
+Rating: 7/10
 
 ## Ingredients
 

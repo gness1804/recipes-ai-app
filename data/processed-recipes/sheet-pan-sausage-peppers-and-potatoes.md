@@ -1,6 +1,6 @@
 # Sheet-Pan Sausage, Peppers, and Potatoes
 
-Rating: [MISSING]
+Rating: 4/10
 
 ## Ingredients
 
