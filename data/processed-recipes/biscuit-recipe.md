@@ -1,6 +1,6 @@
 # Biscuit recipe
 
-Rating: [MISSING]
+Rating: N
 
 ## Ingredients
 

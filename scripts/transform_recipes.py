@@ -177,34 +177,40 @@ def save_manifest(manifest: dict[str, str]) -> None:
     )
 
 
-def load_ratings() -> dict[str, int | None]:
+def load_ratings() -> dict[str, int | str | None]:
     """Load manual ratings from the ratings JSON file.
 
     Returns:
-        dict mapping filenames to ratings (int or None if not yet rated)
+        dict mapping filenames to ratings:
+        - int (1-10): actual rating
+        - "N": not tried yet (intentionally unrated)
+        - None: needs a rating (missing)
     """
     if RATINGS_FILE.exists():
         return json.loads(RATINGS_FILE.read_text(encoding="utf-8"))
     return {}
 
 
-def save_ratings(ratings: dict[str, int | None]) -> None:
+def save_ratings(ratings: dict[str, int | str | None]) -> None:
     """Save manual ratings to the ratings JSON file."""
     RATINGS_FILE.write_text(
         json.dumps(ratings, indent=2, sort_keys=True), encoding="utf-8"
     )
 
 
-def apply_rating_to_content(content: str, rating: int) -> str:
+def apply_rating_to_content(content: str, rating: int | str) -> str:
     """Replace [MISSING] rating with the actual rating value.
 
     Args:
         content: The recipe content with Rating: [MISSING]
-        rating: The rating value to apply (1-10)
+        rating: The rating value (1-10) or "N" for not tried
 
     Returns:
         Content with the rating applied
     """
+    if isinstance(rating, str):
+        # "N" or other string markers - don't add "/10"
+        return re.sub(r"Rating:\s*\[MISSING\]", f"Rating: {rating}", content)
     return re.sub(r"Rating:\s*\[MISSING\]", f"Rating: {rating}/10", content)
 
 
@@ -361,7 +367,7 @@ def extract_recipe_name(content: str) -> str:
     return "unknown-recipe"
 
 
-def save_processed_recipe(content: str, original_path: Path, ratings: dict[str, int | None] | None = None) -> Path:
+def save_processed_recipe(content: str, original_path: Path, ratings: dict[str, int | str | None] | None = None) -> Path:
     """Save the processed recipe to the output directory.
 
     If the content has a [MISSING] rating and a manual rating exists in the
@@ -668,9 +674,13 @@ def main():
                 continue
 
             # Apply the rating
-            new_content = apply_rating_to_content(content, ratings[file.name])
+            rating = ratings[file.name]
+            new_content = apply_rating_to_content(content, rating)
             file.write_text(new_content, encoding="utf-8")
-            print(f"  Applied rating {ratings[file.name]}/10 to {file.name}")
+            if isinstance(rating, str):
+                print(f"  Applied rating '{rating}' (not tried) to {file.name}")
+            else:
+                print(f"  Applied rating {rating}/10 to {file.name}")
             applied_count += 1
 
         if applied_count > 0:

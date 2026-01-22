@@ -1,6 +1,6 @@
 # Black Soy Bean and Garbanzo Salad
 
-Rating: [MISSING]
+Rating: 6/10
 
 ## Ingredients
 

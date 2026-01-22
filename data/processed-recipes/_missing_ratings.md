@@ -2,9 +2,6 @@
 
 Please add ratings to the following recipes:
 
-- [ ] Biscuit recipe (`biscuit-recipe.md`)
-- [ ] Black bean soup (`black-bean-soup.md`)
-- [ ] Black Soy Bean and Garbanzo Salad (`black-soy-bean-and-garbanzo-salad.md`)
 - [ ] Cajun Blackened Catfish (`cajun-blackened-catfish.md`)
 - [ ] Caribbean Chicken (`caribbean-chicken.md`)
 - [ ] Caribbean Jerk Stir-Fry (`caribbean-jerk-stir-fry.md`)
