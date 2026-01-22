@@ -1,0 +1,13 @@
+{
+  "_id": "string # from the slug, see data/processed-recipes/_processed_manifest.json. Example: thai-chicken",
+  "content": "string # from the entire recipe text",
+  "metadata": {
+    "title": "string # from the H1 in a recipe",
+    "ingredients": "string # from the H2 Ingredients section of a recipe",
+    "instructions": "string # from the H2 Instructions section of a recipe",
+    "rating": "number # from the Rating portion of a recipe. In the recipe text it looks like this: Rating: 8/10",
+    "diet": "Array<string> # calculated separately; is one of more of enum values [\"vegetarian\", \"vegan\", \"pescatarian\", \"dairy-free\", \"gluten-free\"]",
+    "protein": "Array<string> # calculated separately; is one of more of enum values [\"beef\", \"vegetarian\", \"egg\", \"pork\", \"lamb\", \"chicken\", \"seafood\", \"none\"]",
+    "prepTimeMinutes": "number # calculated separately; is the total time in minutes to prepare the recipe, including both preparation and cooking time"
+  }
+}
