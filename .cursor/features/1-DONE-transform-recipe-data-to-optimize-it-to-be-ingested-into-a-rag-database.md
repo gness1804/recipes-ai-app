@@ -22,3 +22,5 @@ After this, there should be a second script which takes all of the converted Mar
 - If there is no rating in the original document, then leave that part blank in the output document and alert the user that they need to enter in a rating. 
 - The transformer will be either a Python script or an LLM.
 - The transformer will be determined based on the task requirements and the available resources.
+
+<!-- DONE -->

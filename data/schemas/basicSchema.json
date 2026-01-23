@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Recipe Vector DB Schema",
+  "description": "Schema for recipe records optimized for RAG vector database ingestion. Enum values are extensible - the LLM classifier may add new values if existing ones don't fit.",
+  "type": "object",
+  "required": ["_id", "content", "metadata"],
+  "properties": {
+    "_id": {
+      "type": "string",
+      "description": "Unique identifier derived from recipe slug (e.g., 'thai-chicken')"
+    },
+    "content": {
+      "type": "string",
+      "description": "Full recipe text for embedding generation"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Recipe title from the H1 header"
+        },
+        "ingredients": {
+          "type": "string",
+          "description": "Full ingredients section text (for display, not filtering)"
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Full instructions section text (for display, not filtering)"
+        },
+        "rating": {
+          "type": ["number", "null"],
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Rating from 1.0-10.0, or null if unrated"
+        },
+        "diet": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Dietary classifications. Base values: vegetarian, vegan, pescatarian, dairy-free, gluten-free. LLM may add others.",
+          "examples": [["vegetarian", "gluten-free"], ["pescatarian"]]
+        },
+        "protein": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Protein sources in the recipe. Base values: beef, pork, lamb, chicken, turkey, seafood, tofu, egg, none. LLM may add others.",
+          "examples": [["chicken"], ["seafood", "pork"], ["none"]]
+        },
+        "cuisine": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Cuisine/regional style. Base values: american, cajun, caribbean, chinese, cuban, indian, italian, japanese, korean, mexican, thai, african, brazilian, mediterranean, other. LLM may add others.",
+          "examples": [["cajun"], ["thai", "chinese"]]
+        },
+        "meal_type": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Meal category. Base values: main-dish, side-dish, dessert, sauce, soup, salad, breakfast, snack. LLM may add others.",
+          "examples": [["main-dish"], ["side-dish", "snack"]]
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["easy", "medium", "hard"],
+          "description": "Recipe difficulty level"
+        },
+        "prepTimeMinutes": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Total preparation and cooking time in minutes, or null if not determinable"
+        }
+      }
+    }
+  }
+}

@@ -21,10 +21,9 @@ Rating: 8/10
 
 ## Instructions
 
-1. In a medium stockpot, heat the oil over medium heat.
-2. Add the onion, bell pepper, and chili; cook, stirring, until softened, about 5 minutes.
-3. Add the garlic and cook, stirring constantly, 1 minute.
-4. Add the broth, chickpeas, tomatoes, curry powder, salt, and black pepper; bring to a boil over high heat.
-5. Reduce the heat and simmer gently, uncovered, stirring occasionally, about 10 minutes.
-6. Add the remaining ingredients and cook, stirring occasionally, until heated through, about 5 minutes.
-7. Serve warm.
+1. In a medium stockpot, heat the oil over medium heat. Add the onion, bell pepper, and chili; cook, stirring, until softened, about 5 minutes.
+2. Add the garlic and cook, stirring constantly, 1 minute.
+3. Add the broth, chickpeas, tomatoes, curry powder, salt, and black pepper; bring to a boil over high heat.
+4. Reduce the heat and simmer gently, uncovered, stirring occasionally, about 10 minutes.
+5. Add the remaining ingredients and cook, stirring occasionally, until heated through, about 5 minutes.
+6. Serve warm.

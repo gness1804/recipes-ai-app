@@ -15,6 +15,7 @@ Usage:
 import argparse
 import base64
 import io
+import json
 import os
 import re
 import sys
@@ -33,6 +34,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 RAW_RECIPES_DIR = PROJECT_ROOT / "data" / "raw-recipes"
 PROCESSED_RECIPES_DIR = PROJECT_ROOT / "data" / "processed-recipes"
 MISSING_RATINGS_FILE = PROCESSED_RECIPES_DIR / "_missing_ratings.md"
+MANIFEST_FILE = PROCESSED_RECIPES_DIR / "_processed_manifest.json"
+RATINGS_FILE = PROCESSED_RECIPES_DIR / "_ratings.json"
 
 # Supported file extensions
 MARKDOWN_EXTENSIONS = {".md", ".markdown", ".txt"}
@@ -49,7 +52,7 @@ SYSTEM_PROMPT = """You are a recipe formatting assistant. Your job is to transfo
 You MUST output the recipe in exactly this format:
 
 ```
-# [Recipe Name]
+# [Recipe Name - use the provided original title]
 
 Rating: [N]/10
 
@@ -119,6 +122,11 @@ If a recipe has distinct parts (e.g., a stir-fry and its sauce), use H3 headers:
 1. Combine ingredients...
 ```
 
+### Recipe Title (H1)
+- IMPORTANT: The user will provide the original recipe title. Use that title for the H1 header.
+- Clean up the title if needed (remove file extensions, fix obvious typos), but preserve the recipe name.
+- Do NOT rename the recipe based on the content - use the provided title.
+
 ### Rating
 - If a rating exists in the original, normalize it to X/10 format
 - Convert star ratings: "4 out of 5 stars" → "8/10"
@@ -151,13 +159,59 @@ def get_raw_recipes() -> list[Path]:
     return sorted(recipes)
 
 
-def get_existing_processed_recipes() -> set[str]:
-    """Get slugs of already processed recipes."""
-    existing = set()
-    for file in PROCESSED_RECIPES_DIR.glob("*.md"):
-        if file.name != "_missing_ratings.md":
-            existing.add(file.stem)
-    return existing
+def load_manifest() -> dict[str, str]:
+    """Load the processed recipes manifest.
+
+    Returns:
+        dict mapping raw filenames to processed filenames
+    """
+    if MANIFEST_FILE.exists():
+        return json.loads(MANIFEST_FILE.read_text(encoding="utf-8"))
+    return {}
+
+
+def save_manifest(manifest: dict[str, str]) -> None:
+    """Save the processed recipes manifest."""
+    MANIFEST_FILE.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
+    )
+
+
+def load_ratings() -> dict[str, int | str | None]:
+    """Load manual ratings from the ratings JSON file.
+
+    Returns:
+        dict mapping filenames to ratings:
+        - int (1-10): actual rating
+        - "N": not tried yet (intentionally unrated)
+        - None: needs a rating (missing)
+    """
+    if RATINGS_FILE.exists():
+        return json.loads(RATINGS_FILE.read_text(encoding="utf-8"))
+    return {}
+
+
+def save_ratings(ratings: dict[str, int | str | None]) -> None:
+    """Save manual ratings to the ratings JSON file."""
+    RATINGS_FILE.write_text(
+        json.dumps(ratings, indent=2, sort_keys=True), encoding="utf-8"
+    )
+
+
+def apply_rating_to_content(content: str, rating: int | str) -> str:
+    """Replace [MISSING] rating with the actual rating value.
+
+    Args:
+        content: The recipe content with Rating: [MISSING]
+        rating: The rating value (1-10) or "N" for not tried
+
+    Returns:
+        Content with the rating applied
+    """
+    if isinstance(rating, str):
+        # "N" or other string markers - don't add "/10"
+        return re.sub(r"Rating:\s*\[MISSING\]", f"Rating: {rating}", content)
+    return re.sub(r"Rating:\s*\[MISSING\]", f"Rating: {rating}/10", content)
 
 
 def encode_image_to_base64(image_path: Path) -> str:
@@ -186,13 +240,14 @@ def get_image_media_type(path: Path) -> str:
     return media_types.get(ext, "image/png")
 
 
-def call_gpt4o_text(content: str) -> str:
+def call_gpt4o_text(content: str, original_title: str) -> str:
     """Call GPT-4o with text content."""
+    user_message = f"Original recipe title: {original_title}\n\nTransform this recipe:\n\n{content}"
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Transform this recipe:\n\n{content}"},
+            {"role": "user", "content": user_message},
         ],
         temperature=0.1,
         max_tokens=2000,
@@ -200,7 +255,9 @@ def call_gpt4o_text(content: str) -> str:
     return response.choices[0].message.content
 
 
-def call_gpt4o_vision(images: list[str], media_type: str = "image/png") -> str:
+def call_gpt4o_vision(
+    images: list[str], original_title: str, media_type: str = "image/png"
+) -> str:
     """Call GPT-4o with image content."""
     image_content = [
         {
@@ -222,7 +279,7 @@ def call_gpt4o_vision(images: list[str], media_type: str = "image/png") -> str:
                 "content": [
                     {
                         "type": "text",
-                        "text": "Extract and transform the recipe from this image into the standardized format:",
+                        "text": f"Original recipe title: {original_title}\n\nExtract and transform the recipe from this image into the standardized format:",
                     },
                     *image_content,
                 ],
@@ -234,13 +291,13 @@ def call_gpt4o_vision(images: list[str], media_type: str = "image/png") -> str:
     return response.choices[0].message.content
 
 
-def process_markdown(file_path: Path) -> str:
+def process_markdown(file_path: Path, original_title: str) -> str:
     """Process a markdown file."""
     content = file_path.read_text(encoding="utf-8")
-    return call_gpt4o_text(content)
+    return call_gpt4o_text(content, original_title)
 
 
-def process_pdf(file_path: Path) -> str:
+def process_pdf(file_path: Path, original_title: str) -> str:
     """Process a PDF file by converting pages to images."""
     # Convert PDF pages to images
     images = convert_from_path(file_path, dpi=150)
@@ -248,14 +305,14 @@ def process_pdf(file_path: Path) -> str:
     # Convert PIL images to base64
     base64_images = [pil_image_to_base64(img) for img in images]
 
-    return call_gpt4o_vision(base64_images)
+    return call_gpt4o_vision(base64_images, original_title)
 
 
-def process_image(file_path: Path) -> str:
+def process_image(file_path: Path, original_title: str) -> str:
     """Process an image file."""
     base64_image = encode_image_to_base64(file_path)
     media_type = get_image_media_type(file_path)
-    return call_gpt4o_vision([base64_image], media_type)
+    return call_gpt4o_vision([base64_image], original_title, media_type)
 
 
 def process_recipe(file_path: Path) -> tuple[str, bool]:
@@ -266,13 +323,15 @@ def process_recipe(file_path: Path) -> tuple[str, bool]:
         tuple: (transformed_content, has_missing_rating)
     """
     ext = file_path.suffix.lower()
+    # Extract original title from filename (without extension)
+    original_title = file_path.stem
 
     if ext in MARKDOWN_EXTENSIONS:
-        result = process_markdown(file_path)
+        result = process_markdown(file_path, original_title)
     elif ext in PDF_EXTENSIONS:
-        result = process_pdf(file_path)
+        result = process_pdf(file_path, original_title)
     elif ext in IMAGE_EXTENSIONS:
-        result = process_image(file_path)
+        result = process_image(file_path, original_title)
     else:
         raise ValueError(f"Unsupported file type: {ext}")
 
@@ -308,33 +367,206 @@ def extract_recipe_name(content: str) -> str:
     return "unknown-recipe"
 
 
-def save_processed_recipe(content: str, original_path: Path) -> Path:
-    """Save the processed recipe to the output directory."""
-    recipe_name = extract_recipe_name(content)
-    slug = slugify(recipe_name)
+def save_processed_recipe(content: str, original_path: Path, ratings: dict[str, int | str | None] | None = None) -> Path:
+    """Save the processed recipe to the output directory.
 
-    # Ensure unique filename
+    If the content has a [MISSING] rating and a manual rating exists in the
+    ratings file, the manual rating will be applied.
+
+    Args:
+        content: The processed recipe content
+        original_path: Path to the original raw recipe file
+        ratings: Optional pre-loaded ratings dict (loaded if not provided)
+
+    Returns:
+        Path to the saved processed recipe
+    """
+    # Use the original filename for the slug to preserve user's naming
+    slug = slugify(original_path.stem)
     output_path = PROCESSED_RECIPES_DIR / f"{slug}.md"
+    filename = output_path.name
+
+    # Apply manual rating if available and content has [MISSING]
+    if "[MISSING]" in content:
+        if ratings is None:
+            ratings = load_ratings()
+        if filename in ratings and ratings[filename] is not None:
+            content = apply_rating_to_content(content, ratings[filename])
 
     output_path.write_text(content, encoding="utf-8")
     return output_path
 
 
-def generate_missing_ratings_report(missing_ratings: list[tuple[str, str]]) -> None:
-    """Generate a report of recipes missing ratings."""
-    if not missing_ratings:
-        # Remove the file if it exists and there are no missing ratings
+def load_existing_missing_ratings() -> dict[str, str]:
+    """Load existing missing ratings from the report file.
+
+    Returns:
+        dict mapping filename to recipe name
+    """
+    if not MISSING_RATINGS_FILE.exists():
+        return {}
+
+    existing = {}
+    content = MISSING_RATINGS_FILE.read_text(encoding="utf-8")
+
+    # Parse lines like: - [ ] Recipe Name (`filename.md`)
+    for line in content.splitlines():
+        if line.startswith("- [ ]"):
+            # Extract recipe name and filename
+            match = re.match(r"- \[ \] (.+) \(`(.+)`\)", line)
+            if match:
+                recipe_name, filename = match.groups()
+                existing[filename] = recipe_name
+
+    return existing
+
+
+def scan_processed_recipes_for_missing_ratings() -> list[tuple[str, str]]:
+    """Scan all processed recipes and find those missing ratings.
+
+    A recipe is considered missing a rating if:
+    1. The file has [MISSING] or no Rating: field, AND
+    2. There's no valid rating in _ratings.json for that file
+
+    Returns:
+        List of (recipe_name, filename) tuples for recipes missing ratings
+    """
+    missing = []
+    ratings = load_ratings()
+
+    for file in sorted(PROCESSED_RECIPES_DIR.glob("*.md")):
+        # Skip special files
+        if file.name.startswith("_"):
+            continue
+
+        content = file.read_text(encoding="utf-8")
+
+        # Extract recipe name from H1 header
+        recipe_name = file.stem.replace("-", " ").title()
+        for line in content.splitlines():
+            if line.startswith("# "):
+                recipe_name = line[2:].strip()
+                break
+
+        # Check for missing rating in the file
+        has_missing_rating = False
+        has_rating_field = False
+
+        for line in content.splitlines():
+            if line.startswith("Rating:"):
+                has_rating_field = True
+                if "[MISSING]" in line:
+                    has_missing_rating = True
+                break
+
+        # Check if rating exists in the ratings file
+        has_manual_rating = file.name in ratings and ratings[file.name] is not None
+
+        # Missing if (explicitly marked or no rating field) AND no manual rating
+        if (has_missing_rating or not has_rating_field) and not has_manual_rating:
+            missing.append((recipe_name, file.name))
+
+    return missing
+
+
+def generate_missing_ratings_report(
+    new_missing: list[tuple[str, str]],
+    now_have_ratings: list[str],
+) -> None:
+    """Generate a report of recipes missing ratings.
+
+    Args:
+        new_missing: List of (recipe_name, filename) tuples for newly processed
+            recipes that are missing ratings
+        now_have_ratings: List of filenames for recipes that were reprocessed
+            and now have ratings (to remove from the report)
+    """
+    # Load existing entries
+    existing = load_existing_missing_ratings()
+
+    # Remove recipes that now have ratings
+    for filename in now_have_ratings:
+        existing.pop(filename, None)
+
+    # Add new missing ratings
+    for recipe_name, filename in new_missing:
+        existing[filename] = recipe_name
+
+    # Filter out entries for files that no longer exist (handles renamed/deleted files)
+    existing = {
+        filename: recipe_name
+        for filename, recipe_name in existing.items()
+        if (PROCESSED_RECIPES_DIR / filename).exists()
+    }
+
+    # If nothing is missing, remove the file
+    if not existing:
         if MISSING_RATINGS_FILE.exists():
             MISSING_RATINGS_FILE.unlink()
         return
 
+    # Write combined report
     content = "# Recipes Missing Ratings\n\n"
     content += "Please add ratings to the following recipes:\n\n"
 
-    for recipe_name, filename in missing_ratings:
+    for filename in sorted(existing.keys()):
+        recipe_name = existing[filename]
         content += f"- [ ] {recipe_name} (`{filename}`)\n"
 
     MISSING_RATINGS_FILE.write_text(content, encoding="utf-8")
+
+
+def normalize_filenames() -> list[tuple[str, str]]:
+    """Normalize processed recipe filenames to match their H1 header slugs.
+
+    Returns:
+        List of (old_filename, new_filename) tuples for files that were renamed.
+    """
+    renamed = []
+    manifest = load_manifest()
+    manifest_updated = False
+
+    for file in sorted(PROCESSED_RECIPES_DIR.glob("*.md")):
+        # Skip special files
+        if file.name.startswith("_"):
+            continue
+
+        content = file.read_text(encoding="utf-8")
+
+        # Extract recipe name from H1 header
+        recipe_name = extract_recipe_name(content)
+        if recipe_name == "unknown-recipe":
+            print(f"  Warning: Could not extract H1 from {file.name}, skipping")
+            continue
+
+        # Generate expected slug
+        expected_slug = slugify(recipe_name)
+        expected_filename = f"{expected_slug}.md"
+
+        # Check if rename is needed
+        if file.name != expected_filename:
+            new_path = PROCESSED_RECIPES_DIR / expected_filename
+
+            # Check for conflicts
+            if new_path.exists() and new_path != file:
+                print(f"  Warning: Cannot rename {file.name} -> {expected_filename} (file exists)")
+                continue
+
+            # Rename the file
+            file.rename(new_path)
+            renamed.append((file.name, expected_filename))
+
+            # Update manifest entries that point to the old filename
+            for raw_name, processed_name in list(manifest.items()):
+                if processed_name == file.name:
+                    manifest[raw_name] = expected_filename
+                    manifest_updated = True
+
+    # Save updated manifest
+    if manifest_updated:
+        save_manifest(manifest)
+
+    return renamed
 
 
 def main():
@@ -359,11 +591,105 @@ def main():
         action="store_true",
         help="Allow reprocessing of already processed recipes",
     )
+    parser.add_argument(
+        "--scan-ratings",
+        action="store_true",
+        help="Scan all processed recipes for missing ratings and update the report",
+    )
+    parser.add_argument(
+        "--normalize",
+        action="store_true",
+        help="Normalize filenames by renaming files to match their H1 header slugs",
+    )
+    parser.add_argument(
+        "--apply-ratings",
+        action="store_true",
+        help="Apply ratings from _ratings.json to existing processed recipes",
+    )
 
     args = parser.parse_args()
 
     # Ensure output directory exists
     PROCESSED_RECIPES_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Handle --scan-ratings flag
+    if args.scan_ratings:
+        print("Scanning processed recipes for missing ratings...")
+        missing = scan_processed_recipes_for_missing_ratings()
+
+        if missing:
+            # Write the report (replaces existing content entirely)
+            content = "# Recipes Missing Ratings\n\n"
+            content += "Please add ratings to the following recipes:\n\n"
+            for recipe_name, filename in missing:
+                content += f"- [ ] {recipe_name} (`{filename}`)\n"
+            MISSING_RATINGS_FILE.write_text(content, encoding="utf-8")
+
+            print(f"Found {len(missing)} recipes missing ratings.")
+            print(f"Report saved to: {MISSING_RATINGS_FILE}")
+        else:
+            if MISSING_RATINGS_FILE.exists():
+                MISSING_RATINGS_FILE.unlink()
+            print("All recipes have ratings!")
+
+        sys.exit(0)
+
+    # Handle --normalize flag
+    if args.normalize:
+        print("Normalizing processed recipe filenames...")
+        renamed = normalize_filenames()
+
+        if renamed:
+            print(f"\nRenamed {len(renamed)} files:")
+            for old_name, new_name in renamed:
+                print(f"  {old_name} -> {new_name}")
+            print(f"\nManifest updated: {MANIFEST_FILE}")
+        else:
+            print("All filenames are already normalized.")
+
+        sys.exit(0)
+
+    # Handle --apply-ratings flag
+    if args.apply_ratings:
+        print("Applying ratings from _ratings.json to processed recipes...")
+        ratings = load_ratings()
+
+        if not ratings:
+            print("No ratings file found or file is empty.")
+            sys.exit(1)
+
+        applied_count = 0
+        for file in sorted(PROCESSED_RECIPES_DIR.glob("*.md")):
+            # Skip special files
+            if file.name.startswith("_"):
+                continue
+
+            if file.name not in ratings or ratings[file.name] is None:
+                continue
+
+            content = file.read_text(encoding="utf-8")
+
+            # Check if this file has a [MISSING] rating
+            if "[MISSING]" not in content:
+                continue
+
+            # Apply the rating
+            rating = ratings[file.name]
+            new_content = apply_rating_to_content(content, rating)
+            file.write_text(new_content, encoding="utf-8")
+            if isinstance(rating, str):
+                print(f"  Applied rating '{rating}' (not tried) to {file.name}")
+            else:
+                print(f"  Applied rating {rating}/10 to {file.name}")
+            applied_count += 1
+
+        if applied_count > 0:
+            print(f"\nApplied ratings to {applied_count} recipes.")
+            print("Run --scan-ratings to update the missing ratings report.")
+        else:
+            print("No ratings to apply (either no ratings in file or all recipes already have ratings).")
+
+        sys.exit(0)
 
     # Get all raw recipes
     raw_recipes = get_raw_recipes()
@@ -372,18 +698,15 @@ def main():
         print("No raw recipes found in", RAW_RECIPES_DIR)
         sys.exit(1)
 
-    # Get existing processed recipes
-    existing_slugs = get_existing_processed_recipes()
+    # Load manifest of already processed recipes
+    manifest = load_manifest()
 
     # Filter out duplicates if not allowed
     recipes_to_process = []
     skipped_duplicates = []
 
     for recipe_path in raw_recipes:
-        # Generate a temporary slug from filename to check for duplicates
-        temp_slug = slugify(recipe_path.stem)
-
-        if temp_slug in existing_slugs and not args.duplicates:
+        if recipe_path.name in manifest and not args.duplicates:
             skipped_duplicates.append(recipe_path)
         else:
             recipes_to_process.append(recipe_path)
@@ -406,6 +729,9 @@ def main():
     # Confirmation prompt for processing all
     if args.limit is None and not args.yes:
         print(f"\nAbout to process {len(recipes_to_process)} recipes.")
+        # Print all the recipes to be processed just by name. 
+        for recipe_path in recipes_to_process:
+            print(recipe_path.name)
         print("This will make API calls to OpenAI GPT-4o.\n")
         confirm = input("Continue? [y/N]: ").strip().lower()
         if confirm != "y":
@@ -416,6 +742,10 @@ def main():
     processed_count = 0
     failed_count = 0
     missing_ratings = []
+    now_have_ratings = []  # Track recipes that were reprocessed and now have ratings
+
+    # Load manual ratings once for efficiency
+    manual_ratings = load_ratings()
 
     print(f"\nProcessing {len(recipes_to_process)} recipes...\n")
 
@@ -427,15 +757,31 @@ def main():
 
         try:
             content, has_missing_rating = process_recipe(recipe_path)
-            output_path = save_processed_recipe(content, recipe_path)
+            output_path = save_processed_recipe(content, recipe_path, manual_ratings)
 
             recipe_name = extract_recipe_name(content)
 
-            if has_missing_rating:
+            # Check if manual rating was applied (GPT returned [MISSING] but we had a rating)
+            has_manual_rating = (
+                output_path.name in manual_ratings
+                and manual_ratings[output_path.name] is not None
+            )
+
+            if has_missing_rating and not has_manual_rating:
                 missing_ratings.append((recipe_name, output_path.name))
                 print(f"Done (MISSING RATING) -> {output_path.name}")
+            elif has_missing_rating and has_manual_rating:
+                # Manual rating was applied
+                now_have_ratings.append(output_path.name)
+                print(f"Done (applied manual rating) -> {output_path.name}")
             else:
+                # Track this so we can remove it from missing ratings if it was there before
+                now_have_ratings.append(output_path.name)
                 print(f"Done -> {output_path.name}")
+
+            # Update manifest with successful processing
+            manifest[recipe_path.name] = output_path.name
+            save_manifest(manifest)
 
             processed_count += 1
 
@@ -444,7 +790,7 @@ def main():
             failed_count += 1
 
     # Generate missing ratings report
-    generate_missing_ratings_report(missing_ratings)
+    generate_missing_ratings_report(missing_ratings, now_have_ratings)
 
     # Summary
     print(f"\n{'=' * 50}")

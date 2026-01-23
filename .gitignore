@@ -52,3 +52,7 @@ node_modules/
 *.db
 .cache/
 
+# LLM classification cache (but keep .gitkeep)
+data/cache/*
+!data/cache/.gitkeep
+

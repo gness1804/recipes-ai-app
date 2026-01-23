@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "mcp__acp__Bash"
+      "mcp__acp__Bash",
+      "Bash(git -C /Users/grahamnessler/Desktop/pinecone/recipes-ai-app status)",
+      "Bash(git -C /Users/grahamnessler/Desktop/pinecone/recipes-ai-app diff --stat scripts/transform_recipes.py)"
     ]
   }
 }
