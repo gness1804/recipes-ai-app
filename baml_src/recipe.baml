@@ -60,8 +60,19 @@ class Recipe {
 function ExtractRecipe(recipe: string) -> Recipe {
     client "CustomGPT5Mini"
     prompt #"
-        Extract the recipe from the following content:
+        Extract the recipe from the following content. Normalize quantities into decimals. For instance, 1 and a half cups flour should be 1.5 cups flour, 1/2 teaspoon salt should be 0.5 teaspoons salt, etc.:
         {{ recipe }}
+
+        {{ ctx.output_format }}
+    "#
+}
+
+function ExtractRecipeFromImage(image: image) -> Recipe {
+    client "CustomGPT4oVision"
+    prompt #"
+        {{ _.role("user") }}
+        Extract the recipe from the following image. Normalize quantities into decimals. For instance, 1 and a half cups flour should be 1.5 cups flour, 1/2 teaspoon salt should be 0.5 teaspoons salt, etc.:
+        {{ image }}
 
         {{ ctx.output_format }}
     "#
@@ -72,8 +83,6 @@ test TestExtractRecipe {
   args {
     recipe #"
       Caribbean Chicken
-
-    Rating: 8/10
 
     1 teaspoon paprika  
     1 teaspoon onion powder  
@@ -96,5 +105,15 @@ test TestExtractRecipe {
 
     Bake in preheated oven for 15 minutes. Turn the chicken, pour 1/2 cup grapefruit juice over chicken, and continue cooking for another 15 minutes or until done.
     "#
+  }
+}
+
+
+test TestExtractRecipeFromImage {
+  functions [ExtractRecipeFromImage]
+  args {
+    image {
+      file "./IMG_1961.jpg"
+    }
   }
 }

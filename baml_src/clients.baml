@@ -27,6 +27,15 @@ client<llm> CustomGPT5Chat {
   }
 }
 
+// OpenAI vision model for image processing
+client<llm> CustomGPT4oVision {
+  provider openai
+  options {
+    model "gpt-4o-mini"
+    api_key env.OPENAI_API_KEY
+  }
+}
+
 // Latest Anthropic Claude 4 models
 client<llm> CustomOpus4 {
   provider anthropic

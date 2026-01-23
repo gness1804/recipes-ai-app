@@ -1,3 +1,6 @@
+---
+github_issue: 6
+---
 # Data Transformation Version 2 Use Baml
 
 ## Working directory
@@ -13,6 +16,8 @@ We will probably then need the same script for our second script to take these J
 This processing should be separate from the processing that we did for v1. (See the data directory) that is, all those recipes should be considered finished. The v2 will only process new, separate recipes. 
 
 The only big snag I can see is ratings. Most of these recipes won't come with ratings. We might need some similar logic to pinpoint which recipes for v2 don't have ratings so that I can then go and manually add them as before. But every other value for these recipes should be added by the LLM via BAML.
+
+Before starting any work, present a plan broken down by steps. Also estimate the cost of all LLM use that will go into this phase.
 
 ## Acceptance criteria
 - Script that takes raw recipes for version 2 and transforms them into a format matching basicSchema using BAML.
