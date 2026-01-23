@@ -56,3 +56,6 @@ node_modules/
 data/cache/*
 !data/cache/.gitkeep
 
+# V2 raw recipes (source files kept locally)
+v2/raw-recipes/
+
