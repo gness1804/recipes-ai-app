@@ -1,6 +1,6 @@
 class Recipe {
     id string @description(#"
-        The unique identifier of the recipe. This is the slug of the recipe. This should be the same as the _id field in the vector DB schema.
+        The unique identifier of the recipe. This is the slug of the recipe. This should be the same as the _id field in the vector DB schema. This should be a lowercase string with hyphens between words. This should be derived from the title of the recipe, not the contents.
         For example, "caribbean-chicken" for the recipe "Caribbean Chicken".
     "#)
     content string @description(#"
@@ -27,7 +27,32 @@ class Recipe {
         ```
     "#)
     rating float | null @description(#"
-        The rating of the recipe. This is a float between 1.0 and 10.0. Return null if there is no rating in the recipe. Do not assign a rating yourself.
+        The rating of the recipe. This is a float between 1.0 and 10.0. Return null only if you truly cannot evaluate the recipe.
+
+        RATING CRITERIA (rate based on how well the recipe fits these preferences):
+
+        Dietary Preferences:
+        - Avoid dairy (cheese, milk, cream) except in: pizza, ice cream, some yogurts. Dairy should be optional/on-the-side, not integral.
+        - Avoid eggs as a main component (eggs in baked goods are fine).
+        - Moderate spice levels preferred. Should be GERD-friendly: not too spicy, not too fatty, not too citrusy, not too meat-heavy.
+        - Limit red meat (hereditary colon cancer susceptibility). Other meats and seafood are good.
+        - Seafood/fish: all types are enjoyed.
+
+        Cuisine Preferences (favor these):
+        - Favorites: Indian, East Asian (Chinese, Japanese, Korean, Thai), Spanish/Iberian, Cajun
+        - Also liked: Mexican, Italian (but dairy limits selection)
+        - Least favorite: bland cuisines (English, Ecuadorian)
+
+        Practical Considerations:
+        - Favor recipes with 40-45 minutes or less total prep+cook time
+        - Favor recipes with 10 or fewer ingredients
+        - Favor recipes without expensive or hard-to-find ingredients
+
+        Scoring guidance:
+        - 8-10: Excellent fit (preferred cuisine, no dietary issues, quick/easy)
+        - 6-7: Good fit (minor issues or neutral cuisine)
+        - 4-5: Acceptable but has drawbacks (contains dairy/eggs as optional, longer prep, etc.)
+        - 1-3: Poor fit (integral dairy/eggs, very fatty/spicy, bland cuisine, excessive red meat)
     "#)
     diet string[] @description(#"
         The diet of the recipe. This is an array of strings. The possible values are: vegetarian, vegan, pescatarian, dairy-free, gluten-free. You may add new values if the recipe clearly fits a dietary category not listed (e.g., "keto", "paleo").
