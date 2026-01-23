@@ -18,3 +18,5 @@ Present a series of steps to complete this task. First, I would like you to look
 ## Acceptance criteria
 - A Python script and/or other mechanism to convert the recipes to fit a schema that will be optimized for RAG vector database ingestion. 
 - The recipes should be transformed into a format that matches the basic schema or a modified schema that is optimized for RAG vector database ingestion.
+
+<!-- DONE -->
