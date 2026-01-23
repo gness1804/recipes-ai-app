@@ -16,6 +16,9 @@ from . import stream_types
 
 type_map = {
 
+    "types.Recipe": types.Recipe,
+    "stream_types.Recipe": stream_types.Recipe,
+
     "types.Resume": types.Resume,
     "stream_types.Resume": stream_types.Resume,
 

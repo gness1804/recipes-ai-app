@@ -23,8 +23,21 @@ class StreamState(BaseModel, typing.Generic[StreamStateValueT]):
     value: StreamStateValueT
     state: typing_extensions.Literal["Pending", "Incomplete", "Complete"]
 # #########################################################################
-# Generated classes (1)
+# Generated classes (2)
 # #########################################################################
+
+class Recipe(BaseModel):
+    content: typing.Optional[str] = Field(default=None, description='The full recipe content. This is the full recipe content, including the title, ingredients, instructions, and other information.')
+    title: typing.Optional[str] = Field(default=None, description='The title of the recipe.')
+    ingredients: typing.Optional[str] = Field(default=None, description='The ingredients of the recipe. This is the ingredients section of the recipe. It should be presented as a single string with a numbered list in it. For example:\n```\n1. 1 cup of flour\n2. 2 cups of sugar\n3. 3 cups of milk\n```')
+    instructions: typing.Optional[str] = Field(default=None, description='The instructions of the recipe. This is the instructions section of the recipe. It should be presented as a single string with a numbered list in it. For example:\n```\n1. Preheat the oven to 350 degrees Fahrenheit.\n2. In a large bowl, mix together the flour, sugar, and milk.\n3. Pour the mixture into a 9x5 inch loaf pan.\n4. Bake for 1 hour to 1 hour and 15 minutes, or until a toothpick inserted into the center of the loaf comes out clean.\n```')
+    rating: typing.Optional[float] = Field(default=None, description='The rating of the recipe. This is a float between 1.0 and 10.0.')
+    diet: typing.List[str] = Field(description='The diet of the recipe. This is an array of strings. The possible values are: vegetarian, vegan, pescatarian, dairy-free, gluten-free. You may add new values if the recipe clearly fits a dietary category not listed (e.g., "keto", "paleo").')
+    protein: typing.List[str] = Field(description='The protein of the recipe. This is an array of strings. The possible values are: beef, pork, lamb, chicken, turkey, seafood, tofu, egg, none. \n"seafood" covers fish, shrimp, clams, etc.\nUse "none" for recipes with no significant protein source\nA recipe can have multiple proteins (e.g., jambalaya with ["chicken", "seafood", "pork"])\nYou may add new values if needed (e.g., "duck", "game")')
+    cuisine: typing.List[str] = Field(description='The cuisine of the recipe. This is an array of strings. The possible values are: american, cajun, caribbean, chinese, cuban, indian, italian, japanese, korean, mexican, thai, african, brazilian, mediterranean, other. Use "other" sparingly - prefer adding a specific cuisine if identifiable. A recipe can blend cuisines (e.g., ["thai", "chinese"] for a fusion dish). You may add new values if needed (e.g., "indonesian", "vietnamese", "spanish"). Only use "other" if you truly cannot identify the national or ethnic origin of the recipe.')
+    meal_type: typing.List[str] = Field(description='The meal type of the recipe. This is an array of strings. The possible values are: main-dish, side-dish, dessert, sauce, soup, salad, breakfast, snack. A recipe can be multiple types (e.g., a substantial salad could be ["salad", "main-dish"]). You may add new values if needed (e.g., "appetizer", "beverage", "condiment").')
+    difficulty: typing.Optional[str] = Field(default=None, description='The difficulty of the recipe. The possible values are: easy, medium, hard. Unlike with some of the other categories, this is mutually exclusive.\neasy: Few ingredients, simple techniques, under 30 mins active time\nmedium: More ingredients or techniques, 30-60 mins active time\nhard: Complex techniques, many steps, over 60 mins active time, or requires special skills\nYou may add new values if needed (e.g., "expert", "advanced")')
+    prepTimeMinutes: typing.Optional[int] = Field(default=None, description='The preparation and cooking time of the recipe in minutes. Estimate based on the instructions. Include both prep time and cooking/baking time. Return null if you cannot reasonably estimate.')
 
 class Resume(BaseModel):
     name: typing.Optional[str] = None
