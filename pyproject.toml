@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.bump2version]
-current_version = "0.1.0"
+current_version = "0.2.0"
 commit = true
 tag = true
 files = ["pyproject.toml"]
 
 [project]
 name = "recipes-ai-app"
-version = "0.1.0"
+version = "0.2.0"
 description = "Recipe chatbot using RAG with Pinecone vector database"
 readme = "README.md"
 requires-python = ">=3.10"
