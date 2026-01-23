@@ -2,6 +2,8 @@ from baml_client.sync_client import b
 from baml_client.types import Recipe
 
 
+
+
 # def example(raw_resume: str) -> Resume:
 #     # BAML's internal parser guarantees ExtractResume
 #     # to be always return a Resume type

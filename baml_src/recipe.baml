@@ -1,4 +1,8 @@
 class Recipe {
+    id string @description(#"
+        The unique identifier of the recipe. This is the slug of the recipe. This should be the same as the _id field in the vector DB schema.
+        For example, "caribbean-chicken" for the recipe "Caribbean Chicken".
+    "#)
     content string @description(#"
         The full recipe content. This is the full recipe content, including the title, ingredients, instructions, and other information.
     "#)
@@ -22,8 +26,8 @@ class Recipe {
         4. Bake for 1 hour to 1 hour and 15 minutes, or until a toothpick inserted into the center of the loaf comes out clean.
         ```
     "#)
-    rating float @description(#"
-        The rating of the recipe. This is a float between 1.0 and 10.0.
+    rating float | null @description(#"
+        The rating of the recipe. This is a float between 1.0 and 10.0. Return null if there is no rating in the recipe. Do not assign a rating yourself.
     "#)
     diet string[] @description(#"
         The diet of the recipe. This is an array of strings. The possible values are: vegetarian, vegan, pescatarian, dairy-free, gluten-free. You may add new values if the recipe clearly fits a dietary category not listed (e.g., "keto", "paleo").
