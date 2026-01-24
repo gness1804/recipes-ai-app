@@ -58,7 +58,7 @@ RECIPE_RECORDS = [
         },
     },
     {
-        "_id": 'chicken-fajita',
+        "_id": 'tortilla-soup',
         "content": '# Chicken Fajita\n\nRating: 7.0/10\n\n## Ingredients\n\n1. 1 onion\n2. 1 jalapeno chopped (fresh)\n3. 2 cloves garlic or 0.75 teaspoons garlic salt\n4. 1 can tomato soup\n5. 1 can Mexican tomatoes or regular tomatoes, chopped\n6. 3 cans chicken broth\n7. 1.0 teaspoons cumin\n8. 0.75 teaspoons chili powder\n9. 0.75 teaspoons lemon pepper\n10. 1.0 tablespoons Worcestershire sauce (or a little more)\n\n## Instructions\n\n1. Cut up and brown the chicken. Drain off most of the oil. Put chicken in a bowl.\n2. Saute onion and pepper in oil.\n3. Add other ingredients and simmer.\n4. Fill bowl with tortilla chips, thin slice of Monterey Jack cheese, top with avocado and sour cream.',
         "metadata": {
             "title": 'Chicken Fajita',
