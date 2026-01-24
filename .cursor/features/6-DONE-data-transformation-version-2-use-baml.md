@@ -22,3 +22,5 @@ Before starting any work, present a plan broken down by steps. Also estimate the
 ## Acceptance criteria
 - Script that takes raw recipes for version 2 and transforms them into a format matching basicSchema using BAML.
 - A mechanism that handles ratings, including flagging recipes without ratings and making sure that I rate them if I can.
+
+<!-- DONE -->
