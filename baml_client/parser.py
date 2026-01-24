@@ -36,6 +36,12 @@ class LlmResponseParser:
         __result__ = self.__options.merge_options(baml_options).parse_response(function_name="ExtractRecipeFromImage", llm_response=llm_response, mode="request")
         return typing.cast(types.Recipe, __result__)
 
+    def ExtractRecipeFromImages(
+        self, llm_response: str, baml_options: BamlCallOptions = {},
+    ) -> types.Recipe:
+        __result__ = self.__options.merge_options(baml_options).parse_response(function_name="ExtractRecipeFromImages", llm_response=llm_response, mode="request")
+        return typing.cast(types.Recipe, __result__)
+
     def ExtractResume(
         self, llm_response: str, baml_options: BamlCallOptions = {},
     ) -> types.Resume:
@@ -60,6 +66,12 @@ class LlmStreamParser:
         self, llm_response: str, baml_options: BamlCallOptions = {},
     ) -> stream_types.Recipe:
         __result__ = self.__options.merge_options(baml_options).parse_response(function_name="ExtractRecipeFromImage", llm_response=llm_response, mode="stream")
+        return typing.cast(stream_types.Recipe, __result__)
+
+    def ExtractRecipeFromImages(
+        self, llm_response: str, baml_options: BamlCallOptions = {},
+    ) -> stream_types.Recipe:
+        __result__ = self.__options.merge_options(baml_options).parse_response(function_name="ExtractRecipeFromImages", llm_response=llm_response, mode="stream")
         return typing.cast(stream_types.Recipe, __result__)
 
     def ExtractResume(

@@ -14,6 +14,10 @@ from v2.process_recipes import (
     slugify,
     transform_to_vector_db_format,
     format_recipe_dict,
+    IMAGE_EXTENSIONS,
+    TEXT_EXTENSIONS,
+    PDF_EXTENSIONS,
+    SUPPORTED_EXTENSIONS,
 )
 
 
@@ -142,6 +146,24 @@ class TestFormatRecipeDict:
         assert '"rating": None' in result
 
 
+class TestSupportedExtensions:
+    """Tests for supported file extensions."""
+
+    def test_pdf_in_supported_extensions(self):
+        """PDF should be in SUPPORTED_EXTENSIONS."""
+        assert ".pdf" in SUPPORTED_EXTENSIONS
+
+    def test_pdf_extensions_defined(self):
+        """PDF_EXTENSIONS should be defined with .pdf."""
+        assert ".pdf" in PDF_EXTENSIONS
+
+    def test_all_extensions_in_supported(self):
+        """All extension sets should be included in SUPPORTED_EXTENSIONS."""
+        assert IMAGE_EXTENSIONS.issubset(SUPPORTED_EXTENSIONS)
+        assert TEXT_EXTENSIONS.issubset(SUPPORTED_EXTENSIONS)
+        assert PDF_EXTENSIONS.issubset(SUPPORTED_EXTENSIONS)
+
+
 class TestIntegration:
     """Integration tests (require mocking BAML calls)."""
 
@@ -162,6 +184,65 @@ class TestIntegration:
         try:
             result = extract_recipe_from_text(temp_path)
             mock_b.ExtractRecipe.assert_called_once()
+            assert result == mock_recipe
+        finally:
+            temp_path.unlink()
+
+    @patch("v2.process_recipes.b")
+    @patch("v2.process_recipes.convert_from_path")
+    @patch("v2.process_recipes.baml_py")
+    def test_extract_recipe_from_pdf_single_page(self, mock_baml_py, mock_convert, mock_b):
+        """Test that single-page PDF extraction uses ExtractRecipeFromImage."""
+        from v2.process_recipes import extract_recipe_from_pdf
+        from PIL import Image
+        import tempfile
+
+        mock_recipe = MagicMock()
+        mock_b.ExtractRecipeFromImage.return_value = mock_recipe
+
+        # Create a mock single-page PDF (mock the conversion)
+        mock_image = Image.new("RGB", (100, 100), color="white")
+        mock_convert.return_value = [mock_image]
+
+        # Create a temp PDF file (just need the path, content is mocked)
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+            temp_path = Path(f.name)
+
+        try:
+            result = extract_recipe_from_pdf(temp_path)
+            mock_convert.assert_called_once()
+            mock_b.ExtractRecipeFromImage.assert_called_once()
+            assert result == mock_recipe
+        finally:
+            temp_path.unlink()
+
+    @patch("v2.process_recipes.b")
+    @patch("v2.process_recipes.convert_from_path")
+    @patch("v2.process_recipes.baml_py")
+    def test_extract_recipe_from_pdf_multi_page(self, mock_baml_py, mock_convert, mock_b):
+        """Test that multi-page PDF extraction uses ExtractRecipeFromImages."""
+        from v2.process_recipes import extract_recipe_from_pdf
+        from PIL import Image
+        import tempfile
+
+        mock_recipe = MagicMock()
+        mock_b.ExtractRecipeFromImages.return_value = mock_recipe
+
+        # Create mock multi-page PDF (mock the conversion)
+        mock_images = [
+            Image.new("RGB", (100, 100), color="white"),
+            Image.new("RGB", (100, 100), color="gray"),
+        ]
+        mock_convert.return_value = mock_images
+
+        # Create a temp PDF file (just need the path, content is mocked)
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+            temp_path = Path(f.name)
+
+        try:
+            result = extract_recipe_from_pdf(temp_path)
+            mock_convert.assert_called_once()
+            mock_b.ExtractRecipeFromImages.assert_called_once()
             assert result == mock_recipe
         finally:
             temp_path.unlink()

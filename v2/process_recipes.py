@@ -12,13 +12,16 @@ Usage:
 """
 
 import argparse
+import base64
 import json
 import os
 import sys
+from io import BytesIO
 from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
+from pdf2image import convert_from_path
 
 # Load environment variables from .env file
 load_dotenv()
@@ -41,7 +44,8 @@ UNRATED_FILE = V2_DIR / "_unrated.json"
 # Supported file extensions
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 TEXT_EXTENSIONS = {".txt", ".md"}
-SUPPORTED_EXTENSIONS = IMAGE_EXTENSIONS | TEXT_EXTENSIONS
+PDF_EXTENSIONS = {".pdf"}
+SUPPORTED_EXTENSIONS = IMAGE_EXTENSIONS | TEXT_EXTENSIONS | PDF_EXTENSIONS
 
 
 def slugify(filename: str) -> str:
@@ -116,8 +120,6 @@ def get_raw_recipe_files() -> list[Path]:
 
 def extract_recipe_from_image(image_path: Path) -> Recipe:
     """Extract recipe data from an image using BAML."""
-    import base64
-
     # Read image file and convert to base64
     with open(image_path, "rb") as f:
         image_data = f.read()
@@ -137,6 +139,35 @@ def extract_recipe_from_image(image_path: Path) -> Recipe:
 
     image = baml_py.Image.from_base64(media_type, base64_data)
     return b.ExtractRecipeFromImage(image)
+
+
+def extract_recipe_from_pdf(pdf_path: Path) -> Recipe:
+    """Extract recipe data from a PDF file using BAML.
+
+    Converts PDF pages to images and uses the multi-image BAML function.
+    """
+    # Convert PDF pages to PIL images
+    pages = convert_from_path(pdf_path, dpi=150)
+
+    if len(pages) == 1:
+        # Single page PDF - use the single image function
+        buffer = BytesIO()
+        pages[0].save(buffer, format="PNG")
+        image_data = buffer.getvalue()
+        base64_data = base64.b64encode(image_data).decode("utf-8")
+        image = baml_py.Image.from_base64("image/png", base64_data)
+        return b.ExtractRecipeFromImage(image)
+    else:
+        # Multi-page PDF - convert all pages to images
+        images = []
+        for page in pages:
+            buffer = BytesIO()
+            page.save(buffer, format="PNG")
+            image_data = buffer.getvalue()
+            base64_data = base64.b64encode(image_data).decode("utf-8")
+            images.append(baml_py.Image.from_base64("image/png", base64_data))
+
+        return b.ExtractRecipeFromImages(images)
 
 
 def extract_recipe_from_text(text_path: Path) -> Recipe:
@@ -307,6 +338,8 @@ def process_recipes(force: bool = False, dry_run: bool = False) -> None:
             # Extract recipe using appropriate method
             if file.suffix.lower() in IMAGE_EXTENSIONS:
                 recipe = extract_recipe_from_image(file)
+            elif file.suffix.lower() in PDF_EXTENSIONS:
+                recipe = extract_recipe_from_pdf(file)
             else:
                 recipe = extract_recipe_from_text(file)
 

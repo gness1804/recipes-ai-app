@@ -103,6 +103,23 @@ function ExtractRecipeFromImage(image: image) -> Recipe {
     "#
 }
 
+function ExtractRecipeFromImages(images: image[]) -> Recipe {
+    client "CustomGPT4oVision"
+    prompt #"
+        {{ _.role("user") }}
+        Extract the recipe from the following images. These images represent pages of a multi-page document (such as a PDF).
+        Combine information from all pages to extract the complete recipe.
+        Normalize quantities into decimals. For instance, 1 and a half cups flour should be 1.5 cups flour, 1/2 teaspoon salt should be 0.5 teaspoons salt, etc.:
+
+        {% for img in images %}
+        Page {{ loop.index }}:
+        {{ img }}
+        {% endfor %}
+
+        {{ ctx.output_format }}
+    "#
+}
+
 test TestExtractRecipe {
   functions [ExtractRecipe]
   args {

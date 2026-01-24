@@ -122,6 +122,20 @@ class BamlSyncClient:
                 "image": image,
             })
             return typing.cast(types.Recipe, __result__.cast_to(types, types, stream_types, False, __runtime__))
+    def ExtractRecipeFromImages(self, images: typing.List[baml_py.Image],
+        baml_options: BamlCallOptions = {},
+    ) -> types.Recipe:
+        # Check if on_tick is provided
+        if 'on_tick' in baml_options:
+            __stream__ = self.stream.ExtractRecipeFromImages(images=images,
+                baml_options=baml_options)
+            return __stream__.get_final_response()
+        else:
+            # Original non-streaming code
+            __result__ = self.__options.merge_options(baml_options).call_function_sync(function_name="ExtractRecipeFromImages", args={
+                "images": images,
+            })
+            return typing.cast(types.Recipe, __result__.cast_to(types, types, stream_types, False, __runtime__))
     def ExtractResume(self, resume: str,
         baml_options: BamlCallOptions = {},
     ) -> types.Resume:
@@ -169,6 +183,18 @@ class BamlStreamClient:
           lambda x: typing.cast(types.Recipe, x.cast_to(types, types, stream_types, False, __runtime__)),
           __ctx__,
         )
+    def ExtractRecipeFromImages(self, images: typing.List[baml_py.Image],
+        baml_options: BamlCallOptions = {},
+    ) -> baml_py.BamlSyncStream[stream_types.Recipe, types.Recipe]:
+        __ctx__, __result__ = self.__options.merge_options(baml_options).create_sync_stream(function_name="ExtractRecipeFromImages", args={
+            "images": images,
+        })
+        return baml_py.BamlSyncStream[stream_types.Recipe, types.Recipe](
+          __result__,
+          lambda x: typing.cast(stream_types.Recipe, x.cast_to(types, types, stream_types, True, __runtime__)),
+          lambda x: typing.cast(types.Recipe, x.cast_to(types, types, stream_types, False, __runtime__)),
+          __ctx__,
+        )
     def ExtractResume(self, resume: str,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.BamlSyncStream[stream_types.Resume, types.Resume]:
@@ -203,6 +229,13 @@ class BamlHttpRequestClient:
             "image": image,
         }, mode="request")
         return __result__
+    def ExtractRecipeFromImages(self, images: typing.List[baml_py.Image],
+        baml_options: BamlCallOptions = {},
+    ) -> baml_py.baml_py.HTTPRequest:
+        __result__ = self.__options.merge_options(baml_options).create_http_request_sync(function_name="ExtractRecipeFromImages", args={
+            "images": images,
+        }, mode="request")
+        return __result__
     def ExtractResume(self, resume: str,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
@@ -230,6 +263,13 @@ class BamlHttpStreamRequestClient:
     ) -> baml_py.baml_py.HTTPRequest:
         __result__ = self.__options.merge_options(baml_options).create_http_request_sync(function_name="ExtractRecipeFromImage", args={
             "image": image,
+        }, mode="stream")
+        return __result__
+    def ExtractRecipeFromImages(self, images: typing.List[baml_py.Image],
+        baml_options: BamlCallOptions = {},
+    ) -> baml_py.baml_py.HTTPRequest:
+        __result__ = self.__options.merge_options(baml_options).create_http_request_sync(function_name="ExtractRecipeFromImages", args={
+            "images": images,
         }, mode="stream")
         return __result__
     def ExtractResume(self, resume: str,
