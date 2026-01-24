@@ -1,3 +1,6 @@
+---
+github_issue: 9
+---
 # Handoff: V2 Recipe Processing with BAML
 
 **Date:** 2026-01-23
