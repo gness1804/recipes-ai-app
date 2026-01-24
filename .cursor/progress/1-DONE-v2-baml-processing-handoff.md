@@ -90,3 +90,5 @@ v2/
 cd0de9f chore: Add bump2version setup and update .gitignore
 fb75203 feat: Add v2 recipe processing pipeline with BAML and LLM-based ratings
 ```
+
+<!-- DONE -->
