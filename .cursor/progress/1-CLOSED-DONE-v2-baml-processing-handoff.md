@@ -92,3 +92,5 @@ fb75203 feat: Add v2 recipe processing pipeline with BAML and LLM-based ratings
 ```
 
 <!-- DONE -->
+
+<!-- CLOSED -->
