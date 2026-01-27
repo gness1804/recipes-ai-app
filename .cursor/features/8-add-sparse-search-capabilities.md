@@ -1,3 +1,6 @@
+---
+github_issue: 14
+---
 # Add Sparse Search Capabilities
 
 ## Working directory
