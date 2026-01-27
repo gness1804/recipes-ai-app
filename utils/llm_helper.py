@@ -156,7 +156,7 @@ def _format_recipes_for_prompt(rag_results: list[dict], max_recipes: int = 3) ->
 
 def check_score_threshold(
     rag_results: list[dict],
-    threshold: float = 0.7,
+    threshold: float = 0.10,
 ) -> tuple[bool, float, list[dict]]:
     """
     Check if the top RAG result meets the score threshold.

@@ -14,3 +14,5 @@ When you run `cfs gh sync --dry-run`, if there are any conflicts between the Git
 ## Acceptance criteria
 
 - When you run the above command using dry run, you should not be prompted to resolve any conflicts that might emerge between a GitHub issue and a CFS issue.
+
+<!-- CLOSED -->
