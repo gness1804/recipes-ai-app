@@ -200,8 +200,8 @@ Examples:
     parser.add_argument(
         "--threshold", "-t",
         type=float,
-        default=0.7,
-        help="Minimum relevance score to consider a match (default: 0.7).",
+        default=0.10,
+        help="Minimum relevance score to consider a match (default: 0.10).",
     )
     return parser.parse_args()
 
