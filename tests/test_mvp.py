@@ -217,6 +217,15 @@ class TestResponseFormatter:
         assert "Recipe from your collection" in result
         assert "relevance:" not in result
 
+    def test_format_response_sparse_source(self):
+        result = format_response(
+            "Sparse recipe content",
+            RecipeSource.RAG_SPARSE,
+            score=0.42,
+        )
+        assert "sparse search" in result
+        assert "0.42" in result
+
     def test_format_error(self):
         result = format_error("Something went wrong")
         assert "Error:" in result
@@ -289,6 +298,118 @@ class TestGenerateFallbackRecipe:
         messages = call_args.kwargs["messages"]
         user_message = next(m for m in messages if m["role"] == "user")
         assert "Easy chicken dinner" in user_message["content"]
+
+
+class TestProcessQuery:
+    """Tests for dense/sparse query routing."""
+
+    def test_dense_match_skips_sparse(self):
+        from main import process_query
+
+        dense_hits = [{"_id": "recipe-a", "_score": 0.9, "fields": {"content": "A"}}]
+        sparse_hits = [{"_id": "recipe-b", "_score": 0.8, "fields": {"content": "B"}}]
+
+        with patch("main.embed_text", return_value=[0.1]), \
+             patch("main.search_dense_recipes", return_value=dense_hits) as dense_search, \
+             patch("main.search_sparse_recipes", return_value=sparse_hits) as sparse_search, \
+             patch("main.generate_recipe_response", return_value="RAG"), \
+             patch("main.generate_fallback_recipe", return_value="LLM"):
+            result = process_query(
+                "test query",
+                MagicMock(),
+                "namespace",
+                MagicMock(),
+                "model",
+                MagicMock(),
+                threshold=0.1,
+                sparse_threshold=0.0,
+                min_dense_hits=1,
+                dense_top_k=10,
+                sparse_top_k=10,
+            )
+
+        dense_search.assert_called_once()
+        sparse_search.assert_not_called()
+        assert "Recipe from your collection" in result
+        assert "sparse search" not in result
+
+    def test_sparse_fallback_used_when_dense_insufficient(self):
+        from main import process_query
+
+        dense_hits = [{"_id": "recipe-a", "_score": 0.9, "fields": {"content": "A"}}]
+        sparse_hits = [{"_id": "recipe-b", "_score": 0.8, "fields": {"content": "B"}}]
+
+        with patch("main.embed_text", return_value=[0.1]), \
+             patch("main.search_dense_recipes", return_value=dense_hits), \
+             patch("main.search_sparse_recipes", return_value=sparse_hits), \
+             patch("main.generate_recipe_response", return_value="RAG"), \
+             patch("main.generate_fallback_recipe", return_value="LLM"):
+            result = process_query(
+                "test query",
+                MagicMock(),
+                "namespace",
+                MagicMock(),
+                "model",
+                MagicMock(),
+                threshold=0.1,
+                sparse_threshold=0.0,
+                min_dense_hits=2,
+                dense_top_k=10,
+                sparse_top_k=10,
+            )
+
+        assert "sparse search" in result
+
+    def test_dense_fallback_used_when_sparse_missing(self):
+        from main import process_query
+
+        dense_hits = [{"_id": "recipe-a", "_score": 0.9, "fields": {"content": "A"}}]
+
+        with patch("main.embed_text", return_value=[0.1]), \
+             patch("main.search_dense_recipes", return_value=dense_hits), \
+             patch("main.search_sparse_recipes", return_value=[]), \
+             patch("main.generate_recipe_response", return_value="RAG"), \
+             patch("main.generate_fallback_recipe", return_value="LLM"):
+            result = process_query(
+                "test query",
+                MagicMock(),
+                "namespace",
+                MagicMock(),
+                "model",
+                MagicMock(),
+                threshold=0.1,
+                sparse_threshold=0.0,
+                min_dense_hits=2,
+                dense_top_k=10,
+                sparse_top_k=10,
+            )
+
+        assert "Recipe from your collection" in result
+        assert "sparse search" not in result
+
+    def test_llm_fallback_when_no_hits(self):
+        from main import process_query
+
+        with patch("main.embed_text", return_value=[0.1]), \
+             patch("main.search_dense_recipes", return_value=[]), \
+             patch("main.search_sparse_recipes", return_value=[]), \
+             patch("main.generate_recipe_response", return_value="RAG"), \
+             patch("main.generate_fallback_recipe", return_value="LLM"):
+            result = process_query(
+                "test query",
+                MagicMock(),
+                "namespace",
+                MagicMock(),
+                "model",
+                MagicMock(),
+                threshold=0.1,
+                sparse_threshold=0.0,
+                min_dense_hits=2,
+                dense_top_k=10,
+                sparse_top_k=10,
+            )
+
+        assert "Generated recipe" in result
 
 
 class TestEmbedRecordsFlattening:

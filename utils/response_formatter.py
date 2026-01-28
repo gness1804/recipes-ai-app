@@ -10,6 +10,7 @@ from enum import Enum
 class RecipeSource(Enum):
     """Source of the recipe response."""
     RAG_DATABASE = "rag"
+    RAG_SPARSE = "rag_sparse"
     LLM_GENERATED = "generated"
 
 
@@ -51,6 +52,9 @@ def _build_header(source: RecipeSource, score: float | None) -> str:
     if source == RecipeSource.RAG_DATABASE:
         score_str = f" (relevance: {score:.2f})" if score is not None else ""
         return f"Recipe from your collection{score_str}"
+    if source == RecipeSource.RAG_SPARSE:
+        score_str = f" (relevance: {score:.2f})" if score is not None else ""
+        return f"Recipe from your collection (sparse search){score_str}"
     else:
         return "Generated recipe (no match found in your collection)"
 
