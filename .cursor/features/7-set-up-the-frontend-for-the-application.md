@@ -16,6 +16,8 @@ We need to set up the frontend for this application after the initial MVP is don
 The back-end logic will then work and emit a resulting recipe, which the user will see. 
 There should also be a way to save prior queries and their results initially in local storage. And also a button that you can press that erases this history. 
 
+We should probably build this in streamlit. And then use the Streamlit web hosting for deployment. The goal for this deployment is to be as simple and inexpensive as possible. 
+
 ## Acceptance criteria
 
 - A modern user interface for asking a query for a recipe and then getting a recipe back. 
@@ -23,3 +25,4 @@ There should also be a way to save prior queries and their results initially in 
 - Error handling including cases such as:
 	- The user asking a question irrelevant to recipes
 	- Standard problems such as a back-end or LLM failure
+- Deployment will happen in an inexpensive and easy-to-use platform. 
