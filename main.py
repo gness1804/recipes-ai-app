@@ -17,6 +17,9 @@ Usage:
 
     # Adjust match threshold
     python main.py --threshold 0.6
+
+    # Only use dense search (bypass sparse search)
+    python main.py --dense-only
 """
 
 import argparse
@@ -161,6 +164,7 @@ def process_query(
     min_dense_hits: int,
     dense_top_k: int,
     sparse_top_k: int,
+    dense_only: bool = False,
 ) -> str:
     """
     Process a user query: search RAG database, evaluate match, respond or fallback.
@@ -177,6 +181,7 @@ def process_query(
         min_dense_hits: Minimum dense hit count before skipping sparse fallback
         dense_top_k: Dense search top_k
         sparse_top_k: Sparse search top_k
+        dense_only: If True, skip sparse search entirely (useful for benchmarking)
 
     Returns:
         Formatted response string
@@ -195,28 +200,29 @@ def process_query(
             dense_hits, threshold
         )
         if passes_threshold:
-            if len(dense_hits) >= min_dense_hits:
+            if dense_only or len(dense_hits) >= min_dense_hits:
                 response = generate_recipe_response(
                     user_query, sorted_hits, openai_client
                 )
                 return format_response(response, RecipeSource.RAG_DATABASE, top_score)
             dense_fallback = (sorted_hits, top_score)
 
-    # Fall back to sparse search for complex queries
-    sparse_hits = search_sparse_recipes(
-        index, namespace, query_vector, sparse_encoder, user_query, top_k=sparse_top_k
-    )
-    if sparse_hits:
-        passes_threshold, top_score, sorted_hits = check_score_threshold(
-            sparse_hits, sparse_threshold
+    if not dense_only:
+        # Fall back to sparse search for complex queries
+        sparse_hits = search_sparse_recipes(
+            index, namespace, query_vector, sparse_encoder, user_query, top_k=sparse_top_k
         )
-        if passes_threshold:
-            response = generate_recipe_response(user_query, sorted_hits, openai_client)
-            return format_response(response, RecipeSource.RAG_SPARSE, top_score)
-        print(
-            "Sparse search results did not meet threshold "
-            f"({sparse_threshold}). Best score: {top_score:.2f}"
-        )
+        if sparse_hits:
+            passes_threshold, top_score, sorted_hits = check_score_threshold(
+                sparse_hits, sparse_threshold
+            )
+            if passes_threshold:
+                response = generate_recipe_response(user_query, sorted_hits, openai_client)
+                return format_response(response, RecipeSource.RAG_SPARSE, top_score)
+            print(
+                "Sparse search results did not meet threshold "
+                f"({sparse_threshold}). Best score: {top_score:.2f}"
+            )
 
     if dense_fallback is not None:
         sorted_hits, top_score = dense_fallback
@@ -239,6 +245,7 @@ def run_interactive_mode(
     min_dense_hits: int,
     dense_top_k: int,
     sparse_top_k: int,
+    dense_only: bool = False,
 ) -> None:
     """
     Run the chatbot in interactive mode, prompting for queries in a loop.
@@ -272,6 +279,7 @@ def run_interactive_mode(
                 min_dense_hits,
                 dense_top_k,
                 sparse_top_k,
+                dense_only=dense_only,
             )
             print(result)
         except Exception as e:
@@ -293,6 +301,7 @@ Examples:
   python main.py --sparse-threshold 0.05      # Lower sparse threshold
   python main.py --dense-top-k 5 --sparse-top-k 10 --sparse-threshold 0.05 # Increase dense top-k, sparse top-k, and lower sparse threshold
   python main.py --min-dense-hits 5           # Increase min dense hits
+  python main.py --dense-only                 # Only use dense search (bypass sparse)
         """,
     )
     parser.add_argument(
@@ -337,6 +346,11 @@ Examples:
         default=10,
         help="Number of sparse results to retrieve (default: 10).",
     )
+    parser.add_argument(
+        "--dense-only",
+        action="store_true",
+        help="Only use dense search and bypass sparse search (useful for benchmarking).",
+    )
     return parser.parse_args()
 
 
@@ -370,6 +384,8 @@ def main(
 
     print(f"Connected to Pinecone index: {index_name} (namespace={namespace})")
     print(f"Match threshold: {args.threshold}")
+    if args.dense_only:
+        print("Dense-only mode: sparse search is disabled.")
 
     sparse_encoder = build_sparse_encoder(
         RECIPE_RECORDS,
@@ -404,6 +420,7 @@ def main(
             args.min_dense_hits,
             args.dense_top_k,
             args.sparse_top_k,
+            dense_only=args.dense_only,
         )
         print(result)
     else:
@@ -419,6 +436,7 @@ def main(
             args.min_dense_hits,
             args.dense_top_k,
             args.sparse_top_k,
+            dense_only=args.dense_only,
         )
 
 

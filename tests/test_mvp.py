@@ -411,6 +411,61 @@ class TestProcessQuery:
 
         assert "Generated recipe" in result
 
+    def test_dense_only_skips_sparse_search(self):
+        from main import process_query
+
+        dense_hits = [{"_id": "recipe-a", "_score": 0.9, "fields": {"content": "A"}}]
+
+        with patch("main.embed_text", return_value=[0.1]), \
+             patch("main.search_dense_recipes", return_value=dense_hits), \
+             patch("main.search_sparse_recipes") as sparse_search, \
+             patch("main.generate_recipe_response", return_value="RAG"), \
+             patch("main.generate_fallback_recipe", return_value="LLM"):
+            result = process_query(
+                "test query",
+                MagicMock(),
+                "namespace",
+                MagicMock(),
+                "model",
+                MagicMock(),
+                threshold=0.1,
+                sparse_threshold=0.0,
+                min_dense_hits=2,
+                dense_top_k=10,
+                sparse_top_k=10,
+                dense_only=True,
+            )
+
+        sparse_search.assert_not_called()
+        assert "Recipe from your collection" in result
+        assert "sparse search" not in result
+
+    def test_dense_only_falls_back_to_llm_when_no_dense_hits(self):
+        from main import process_query
+
+        with patch("main.embed_text", return_value=[0.1]), \
+             patch("main.search_dense_recipes", return_value=[]), \
+             patch("main.search_sparse_recipes") as sparse_search, \
+             patch("main.generate_recipe_response", return_value="RAG"), \
+             patch("main.generate_fallback_recipe", return_value="LLM"):
+            result = process_query(
+                "test query",
+                MagicMock(),
+                "namespace",
+                MagicMock(),
+                "model",
+                MagicMock(),
+                threshold=0.1,
+                sparse_threshold=0.0,
+                min_dense_hits=2,
+                dense_top_k=10,
+                sparse_top_k=10,
+                dense_only=True,
+            )
+
+        sparse_search.assert_not_called()
+        assert "Generated recipe" in result
+
 
 class TestEmbedRecordsFlattening:
     """Tests for metadata flattening in embed_records."""
