@@ -29,4 +29,6 @@ The front end should be built out with an eye to eventually accommodating the ad
 - Error handling including cases such as:
 	- The user asking a question irrelevant to recipes
 	- Standard problems such as a back-end or LLM failure
-- Deployment will happen in an inexpensive and easy-to-use platform. 
+- Deployment will happen in an inexpensive and easy-to-use platform.
+
+<!-- DONE -->
