@@ -15,3 +15,5 @@ Acceptance criteria:
 - Add an option to the main script that only does a dense search and bypasses sparse search.
 
 ## Acceptance criteria
+
+<!-- DONE -->
