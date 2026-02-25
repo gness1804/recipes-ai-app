@@ -8,3 +8,8 @@ Pillow>=10.0.0
 
 # Environment variables
 python-dotenv>=1.0.0
+
+# Web frontend
+streamlit>=1.35.0
+streamlit-cookies-controller>=0.3.0
+cryptography>=42.0.0
