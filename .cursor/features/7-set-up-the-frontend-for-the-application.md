@@ -16,7 +16,11 @@ We need to set up the frontend for this application after the initial MVP is don
 The back-end logic will then work and emit a resulting recipe, which the user will see. 
 There should also be a way to save prior queries and their results initially in local storage. And also a button that you can press that erases this history. 
 
-We should probably build this in streamlit. And then use the Streamlit web hosting for deployment. The goal for this deployment is to be as simple and inexpensive as possible. 
+We should probably build this in streamlit OR in fast API. (For models, look at Receipt Ranger and Friendly Advice Columnist respectively.) We need to decide which deployment model is more appropriate for this particular project. And then deployment needs to be as simple and inexpensive as possible. 
+ 
+We should also use a bring your own API key model modeled on one of those other projects. There should be something like a secure cookie and an encrypted cookie used to save the API key for a period of seven days. So that users aren't constantly having to re-enter their API key.
+
+The front end should be built out with an eye to eventually accommodating the advanced features described in .cursor/progress/9 (CFS issue 9). 
 
 ## Acceptance criteria
 
