@@ -73,6 +73,20 @@ Then fill in real keys and run:
 source venv/bin/activate && streamlit run app.py
 ```
 
+### Deployment Troubleshooting
+
+- Error: `No matching distribution found for streamlit-cookies-controller>=0.3.0`
+  - Fix: use `streamlit-cookies-controller>=0.0.4`.
+- Error from Pinecone package import saying `pinecone-client` was renamed
+  - Fix: replace `pinecone-client` with `pinecone` in dependencies.
+
+Current expected dependency lines:
+
+```txt
+pinecone>=3.0.0
+streamlit-cookies-controller>=0.0.4
+```
+
 ### Custom URL Notes
 
 As of March 2, 2026, Streamlit Community Cloud hosts apps on the `*.streamlit.app` domain.  
