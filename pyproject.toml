@@ -43,7 +43,7 @@ dev = [
 ]
 web = [
     "streamlit>=1.35.0",
-    "streamlit-cookies-controller>=0.3.0",
+    "streamlit-cookies-controller>=0.0.4",
     "cryptography>=42.0.0",
 ]
 
