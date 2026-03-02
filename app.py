@@ -439,9 +439,12 @@ def main() -> None:
         # Resolve input: typed message or example button click
         typed_input = st.chat_input(placeholder, disabled=not has_key)
         pending = st.session_state.pending_query
-        if pending:
+        user_input = typed_input
+        # Keep preset queries queued until a key is available so the first
+        # click after cold start/redeploy is not dropped.
+        if user_input is None and pending and has_key:
+            user_input = pending
             st.session_state.pending_query = None
-        user_input = typed_input or pending
 
         if user_input:
             result = _prepare_conversation(user_input)
