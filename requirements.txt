@@ -1,5 +1,5 @@
 # Pinecone and OpenAI
-pinecone-client>=3.0.0
+pinecone>=3.0.0
 openai>=1.0.0
 
 # PDF processing
