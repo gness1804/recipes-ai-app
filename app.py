@@ -12,7 +12,9 @@ Deploy:
 """
 
 import concurrent.futures
+import logging
 import os
+import re
 
 from dotenv import load_dotenv
 
@@ -45,6 +47,8 @@ from utils.response_formatter import RecipeSource  # noqa: E402
 # ── Owner-only imports (Pinecone, RAG) ────────────────────────────────────────
 # We import lazily inside functions so non-owner users never trigger Pinecone
 # initialization and incur unnecessary cold-start cost.
+
+logger = logging.getLogger(__name__)
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -367,12 +371,23 @@ def _process_query_safe(
                 "Please try again."
             )
         except Exception as exc:
+            logger.exception("Query execution failed (owner=%s)", owner)
             return None, None, _friendly_error(exc)
+
+
+def _sanitize_error_detail(detail: str, max_len: int = 220) -> str:
+    """Redact likely secrets and truncate noisy exception text for UI display."""
+    cleaned = re.sub(r"\s+", " ", detail).strip()
+    cleaned = re.sub(r"\b(sk|pc)-[A-Za-z0-9\-_]+\b", r"\1-***", cleaned)
+    if len(cleaned) > max_len:
+        return cleaned[:max_len].rstrip() + "..."
+    return cleaned
 
 
 def _friendly_error(exc: Exception) -> str:
     """Convert an exception into a user-friendly error message."""
-    msg = str(exc).lower()
+    detail = _sanitize_error_detail(str(exc))
+    msg = detail.lower()
     if "api key" in msg or "authentication" in msg or "401" in msg:
         return (
             "Your API key appears to be invalid or expired. "
@@ -381,10 +396,13 @@ def _friendly_error(exc: Exception) -> str:
     if "rate limit" in msg or "429" in msg:
         return "You've hit the OpenAI rate limit. Please wait a moment and try again."
     if "pinecone" in msg or "index" in msg:
-        return "There was a problem connecting to the recipe database. Please try again."
+        return (
+            "There was a problem connecting to the recipe database. "
+            f"Details: {exc.__class__.__name__}: {detail}"
+        )
     if "timeout" in msg or "connection" in msg:
         return "The request timed out. Please check your connection and try again."
-    return f"Something went wrong: {exc}"
+    return f"Something went wrong: {exc.__class__.__name__}: {detail}"
 
 
 # ── App entry point ────────────────────────────────────────────────────────────
