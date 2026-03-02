@@ -56,19 +56,36 @@ OWNER_OPENAI_API_KEY=your-openai-api-key
 
 1. Push the repo to GitHub.
 2. Go to [share.streamlit.io](https://share.streamlit.io) and connect the repo.
-3. Set the main file path to `app.py`.
-4. Under **Settings → Secrets**, add all the variables from the `.env` section above (in TOML format):
+3. Select this repository and branch.
+4. Set the app entrypoint to `app.py`.
+5. In **App settings -> Secrets**, paste values from `.streamlit/secrets.toml.example` (replace placeholders).
+6. Deploy the app.
 
-```toml
-PINECONE_API_KEY = "..."
-OPENAI_API_KEY = "..."
-OWNER_OPENAI_API_KEY = "..."
-SESSION_SECRET = "..."
-PINECONE_INDEX = "recipes-vector-db"
-PINECONE_NAMESPACE = "main_recipes"
+If you want to validate locally with Streamlit-style secrets first:
+
+```bash
+mkdir -p .streamlit && cp .streamlit/secrets.toml.example .streamlit/secrets.toml
 ```
 
-The free tier of Streamlit Community Cloud is sufficient for personal use.
+Then fill in real keys and run:
+
+```bash
+source venv/bin/activate && streamlit run app.py
+```
+
+### Custom URL Notes
+
+As of March 2, 2026, Streamlit Community Cloud hosts apps on the `*.streamlit.app` domain.  
+That means you can choose a custom app subdomain like:
+
+- `recipes-ai-chatbot.streamlit.app`
+
+For a true custom domain like `recipes-ai-chatbot.com`, Streamlit Community Cloud does not provide direct custom-domain mapping. Your options are:
+
+1. Keep Streamlit hosting and use a redirect/proxy layer in front (for example via Cloudflare), with the caveat that this is outside Streamlit's native setup.
+2. Deploy on infrastructure where you control the web server/domain mapping directly, then point Cloudflare DNS there.
+
+For this project, the fastest path to satisfy a custom URL requirement is using a custom Streamlit subdomain (`recipes-ai-chatbot.streamlit.app`).
 
 ## Installing Dependencies
 
