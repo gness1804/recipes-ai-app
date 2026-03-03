@@ -39,6 +39,8 @@ PINECONE_NAMESPACE=main_recipes
 EMBEDDING_MODEL=text-embedding-3-small
 SPARSE_HASH_DIM=262144
 SPARSE_MIN_DOC_FREQ=1
+# Legacy alias also supported in CLI + web UI:
+# SPARSE_MIN_DF=1
 MATCH_THRESHOLD=0.10
 SPARSE_THRESHOLD=0.0
 MIN_DENSE_HITS=3
@@ -51,6 +53,8 @@ SESSION_SECRET=   # generate with: python -c "from cryptography.fernet import Fe
 # Web UI — owner detection (users with this key get full RAG access)
 OWNER_OPENAI_API_KEY=your-openai-api-key
 ```
+
+`main.py` now uses these env vars as its CLI defaults, so web and CLI search parameters stay in sync unless you explicitly override flags.
 
 ## Deployment (Streamlit Community Cloud)
 
