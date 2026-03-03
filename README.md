@@ -113,13 +113,24 @@ Or, to install only web dependencies:
 pip install ".[web]"
 ```
 
-## Seeding the Database
+## Adding New Recipes & Seeding the Database
 
-To upsert your recipes into Pinecone (run once, or when recipes change):
+To add a new raw recipe (such as a Word document, PDF, or image) and sync it with the database, follow the v2 ingestion pipeline:
 
-```bash
-python main.py --upsert
-```
+1. **Prepare the file**: Ensure your recipe is in a supported format: PDF, image (`.jpg`, `.png`, etc.), or text (`.txt`, `.md`). *(Note: Word documents like `.doc` or `.docx` must be saved/exported as PDF or text first).*
+2. **Place the file**: Move the raw recipe file into the `v2/raw-recipes/` directory.
+3. **Process with BAML**: Extract structured data from the raw file using the v2 processing script. This updates `v2/recipes_for_vector_db.py`:
+   ```bash
+   python v2/process_recipes.py
+   ```
+4. **Combine Datasets**: Merge the newly processed v2 recipes with the existing dataset to create a unified `data/combined_recipes.py` file:
+   ```bash
+   python scripts/combine_recipe_datasets.py
+   ```
+5. **Upsert to Pinecone**: Embed the combined recipes and push them to your Pinecone vector database:
+   ```bash
+   python main.py --upsert
+   ```
 
 ## Architecture
 

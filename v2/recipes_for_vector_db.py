@@ -58,22 +58,6 @@ RECIPE_RECORDS = [
         },
     },
     {
-        "_id": 'tortilla-soup',
-        "content": '# Chicken Fajita\n\nRating: 7.0/10\n\n## Ingredients\n\n1. 1 onion\n2. 1 jalapeno chopped (fresh)\n3. 2 cloves garlic or 0.75 teaspoons garlic salt\n4. 1 can tomato soup\n5. 1 can Mexican tomatoes or regular tomatoes, chopped\n6. 3 cans chicken broth\n7. 1.0 teaspoons cumin\n8. 0.75 teaspoons chili powder\n9. 0.75 teaspoons lemon pepper\n10. 1.0 tablespoons Worcestershire sauce (or a little more)\n\n## Instructions\n\n1. Cut up and brown the chicken. Drain off most of the oil. Put chicken in a bowl.\n2. Saute onion and pepper in oil.\n3. Add other ingredients and simmer.\n4. Fill bowl with tortilla chips, thin slice of Monterey Jack cheese, top with avocado and sour cream.',
-        "metadata": {
-            "title": 'Chicken Fajita',
-            "ingredients": '- 1 onion\n- 1 jalapeno chopped (fresh)\n- 2 cloves garlic or 0.75 teaspoons garlic salt\n- 1 can tomato soup\n- 1 can Mexican tomatoes or regular tomatoes, chopped\n- 3 cans chicken broth\n- 1.0 teaspoons cumin\n- 0.75 teaspoons chili powder\n- 0.75 teaspoons lemon pepper\n- 1.0 tablespoons Worcestershire sauce (or a little more)',
-            "instructions": '1. Cut up and brown the chicken. Drain off most of the oil. Put chicken in a bowl.\n2. Saute onion and pepper in oil.\n3. Add other ingredients and simmer.\n4. Fill bowl with tortilla chips, thin slice of Monterey Jack cheese, top with avocado and sour cream.',
-            "rating": 7.0,
-            "diet": [],
-            "protein": ['chicken'],
-            "cuisine": ['mexican'],
-            "meal_type": ['main-dish'],
-            "difficulty": 'medium',
-            "prepTimeMinutes": 30,
-        },
-    },
-    {
         "_id": 'chilys-molten-chocolate-cake',
         "content": "# Chili's Molten Chocolate Cake\n\nRating: 6.0/10\n\n## Ingredients\n\n1. 1 18.25-oz. box chocolate fudge or dark chocolate cake mix\n2. 1.3 cups water\n3. 0.5 cups vegetable oil\n4. 3 eggs\n5. 1 bottle Hershey hot fudge topping\n6. 8 scoops vanilla ice cream\n7. Magic shell chocolate topping\n\n## Instructions\n\n1. Preheat oven to 350 F. Prepare cake following directions on the box. Grease cups of Texas Sized Muffin pan. Fill cups 2/3 full with batter and bake according to package directions.\n2. Remove from pan and cool cakes on rack. If desired, since cakes are served upside down, slice dome off top of cake using serrated knife. Using a sharp knife, cut and scoop out center to place fudge.\n3. Spoon 2-3 tablespoons of the fudge topping into holes of each cake. Cover cakes and refrigerate until ready to serve.\n4. When ready to serve, heat cakes one at a time in microwave heating 40 seconds on high or until fudge sauce begins to bubble. Place warm cake on plate, waiting 15-30 seconds to cool slightly. Place scoop of vanilla ice cream on top of cake. Pour a coating of Magic Shell over the ice cream.",
         "metadata": {
@@ -138,6 +122,22 @@ RECIPE_RECORDS = [
         },
     },
     {
+        "_id": 'salmon-bowl',
+        "content": '# Salmon Bowl\n\nRating: 9.0/10\n\n## Ingredients\n\n1. 5 salmon fillets (4–6 each)\n2. 2 cups dry jasmine rice\n3. 1.5 cups edamame, shelled\n4. 1 English cucumber, sliced\n5. 6 green onions, chopped\n6. 2 mangos, peeled and cubed\n7. 2 avocados, peeled, seeded, and cubed\n8. 0.5 cup chopped fresh cilantro\n9. Sriracha mayo, for topping (optional)\n10. 0.5 cup low-sodium soy sauce\n11. 2 tablespoons rice vinegar\n12. 1 tablespoon sesame oil\n13. 0.25 cup + 1 tablespoon light brown sugar\n14. 1 tablespoon honey\n15. 0.75 teaspoon ground ginger\n16. 1 clove garlic, minced\n17. 2 teaspoons cornstarch + 2 teaspoons water (mixed into a slurry)\n18. 0.25 teaspoon crushed red pepper flakes\n\n## Instructions\n\n1. Make Teriyaki Sauce: Add all sauce ingredients to a small saucepan over medium heat. Bring to a boil, stirring constantly, and boil for about 1 minute. The sauce should be thick enough to coat the back of a spoon. Allow to cool.\n2. Marinate Salmon: Pour 0.25 cup of the teriyaki sauce over the raw salmon and set aside to marinate for at least 20 minutes or up to overnight.\n3. Cook Rice: Cook rice according to package instructions.\n4. Cook Salmon: Preheat air fryer to 400ºF. Spray basket with non-stick spray and place salmon fillets inside. Air fry for 5–7 minutes, or until cooked through (flakes easily with a fork, or 125–135ºF on a thermometer).\n5. Assemble Bowls: Divide rice among bowls and top with a piece of teriyaki salmon, avocado, edamame, mango, and cucumber.\n6. Garnish: Drizzle teriyaki sauce and sriracha mayo over the top and garnish with chopped green onion and cilantro.',
+        "metadata": {
+            "title": 'Salmon Bowl',
+            "ingredients": '- 5 salmon fillets (4–6 each)\n- 2 cups dry jasmine rice\n- 1.5 cups edamame, shelled\n- 1 English cucumber, sliced\n- 6 green onions, chopped\n- 2 mangos, peeled and cubed\n- 2 avocados, peeled, seeded, and cubed\n- 0.5 cup chopped fresh cilantro\n- Sriracha mayo, for topping (optional)\n- 0.5 cup low-sodium soy sauce\n- 2 tablespoons rice vinegar\n- 1 tablespoon sesame oil\n- 0.25 cup + 1 tablespoon light brown sugar\n- 1 tablespoon honey\n- 0.75 teaspoon ground ginger\n- 1 clove garlic, minced\n- 2 teaspoons cornstarch + 2 teaspoons water (mixed into a slurry)\n- 0.25 teaspoon crushed red pepper flakes',
+            "instructions": '1. Make Teriyaki Sauce: Add all sauce ingredients to a small saucepan over medium heat. Bring to a boil, stirring constantly, and boil for about 1 minute. The sauce should be thick enough to coat the back of a spoon. Allow to cool.\n2. Marinate Salmon: Pour 0.25 cup of the teriyaki sauce over the raw salmon and set aside to marinate for at least 20 minutes or up to overnight.\n3. Cook Rice: Cook rice according to package instructions.\n4. Cook Salmon: Preheat air fryer to 400ºF. Spray basket with non-stick spray and place salmon fillets inside. Air fry for 5–7 minutes, or until cooked through (flakes easily with a fork, or 125–135ºF on a thermometer).\n5. Assemble Bowls: Divide rice among bowls and top with a piece of teriyaki salmon, avocado, edamame, mango, and cucumber.\n6. Garnish: Drizzle teriyaki sauce and sriracha mayo over the top and garnish with chopped green onion and cilantro.',
+            "rating": 9.0,
+            "diet": ['pescatarian'],
+            "protein": ['seafood'],
+            "cuisine": ['japanese'],
+            "meal_type": ['main-dish'],
+            "difficulty": 'medium',
+            "prepTimeMinutes": 45,
+        },
+    },
+    {
         "_id": 'sangria',
         "content": "# Sangria\n\nRating: 8.0/10\n\n## Ingredients\n\n1. 1 gallon dry red wine (burgundy)\n2. 0.5 gallon orange juice\n3. 1.0 cup brandy\n4. 1.0 cup triple sec\n5. 1.0 cup sugar\n\n## Instructions\n\n1. Mix all ingredients in a large punch bowl.\n2. Before serving, add a cup or 2 of carbonated water to add fizz, if desired (we didn't).\n3. Serve ice on the side.",
         "metadata": {
@@ -167,6 +167,22 @@ RECIPE_RECORDS = [
             "meal_type": ['dessert'],
             "difficulty": 'medium',
             "prepTimeMinutes": 20,
+        },
+    },
+    {
+        "_id": 'tortilla-soup',
+        "content": '# Chicken Fajita\n\nRating: 7.0/10\n\n## Ingredients\n\n1. 1 onion\n2. 1 jalapeno chopped (fresh)\n3. 2 cloves garlic or 0.75 teaspoons garlic salt\n4. 1 can tomato soup\n5. 1 can Mexican tomatoes or regular tomatoes, chopped\n6. 3 cans chicken broth\n7. 1.0 teaspoons cumin\n8. 0.75 teaspoons chili powder\n9. 0.75 teaspoons lemon pepper\n10. 1.0 tablespoons Worcestershire sauce (or a little more)\n\n## Instructions\n\n1. Cut up and brown the chicken. Drain off most of the oil. Put chicken in a bowl.\n2. Saute onion and pepper in oil.\n3. Add other ingredients and simmer.\n4. Fill bowl with tortilla chips, thin slice of Monterey Jack cheese, top with avocado and sour cream.',
+        "metadata": {
+            "title": 'Chicken Fajita',
+            "ingredients": '- 1 onion\n- 1 jalapeno chopped (fresh)\n- 2 cloves garlic or 0.75 teaspoons garlic salt\n- 1 can tomato soup\n- 1 can Mexican tomatoes or regular tomatoes, chopped\n- 3 cans chicken broth\n- 1.0 teaspoons cumin\n- 0.75 teaspoons chili powder\n- 0.75 teaspoons lemon pepper\n- 1.0 tablespoons Worcestershire sauce (or a little more)',
+            "instructions": '1. Cut up and brown the chicken. Drain off most of the oil. Put chicken in a bowl.\n2. Saute onion and pepper in oil.\n3. Add other ingredients and simmer.\n4. Fill bowl with tortilla chips, thin slice of Monterey Jack cheese, top with avocado and sour cream.',
+            "rating": 7.0,
+            "diet": [],
+            "protein": ['chicken'],
+            "cuisine": ['mexican'],
+            "meal_type": ['main-dish'],
+            "difficulty": 'medium',
+            "prepTimeMinutes": 30,
         },
     }
 ]
