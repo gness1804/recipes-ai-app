@@ -467,6 +467,48 @@ class TestProcessQuery:
         assert "Generated recipe" in result
 
 
+class TestCliConfigDefaults:
+    """Tests for env-backed CLI defaults used by main.py."""
+
+    def test_parse_args_uses_env_defaults(self):
+        from main import parse_args
+
+        with patch.dict(
+            "os.environ",
+            {
+                "MATCH_THRESHOLD": "0.42",
+                "SPARSE_THRESHOLD": "0.08",
+                "MIN_DENSE_HITS": "7",
+                "DENSE_TOP_K": "6",
+                "SPARSE_TOP_K": "13",
+            },
+            clear=False,
+        ):
+            args = parse_args([])
+
+        assert args.threshold == 0.42
+        assert args.sparse_threshold == 0.08
+        assert args.min_dense_hits == 7
+        assert args.dense_top_k == 6
+        assert args.sparse_top_k == 13
+
+    def test_parse_args_falls_back_to_builtin_defaults(self):
+        from main import parse_args
+
+        with patch.dict(
+            "os.environ",
+            {},
+            clear=True,
+        ):
+            args = parse_args([])
+
+        assert args.threshold == 0.10
+        assert args.sparse_threshold == 0.0
+        assert args.min_dense_hits == 3
+        assert args.dense_top_k == 10
+        assert args.sparse_top_k == 10
+
+
 class TestEmbedRecordsFlattening:
     """Tests for metadata flattening in embed_records."""
 

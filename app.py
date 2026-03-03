@@ -88,7 +88,9 @@ def _get_pinecone_resources():
     index = pc.Index(index_name)
 
     sparse_hash_dim = int(os.environ.get("SPARSE_HASH_DIM", str(2**18)))
-    sparse_min_doc_freq = int(os.environ.get("SPARSE_MIN_DOC_FREQ", "1"))
+    sparse_min_doc_freq = int(
+        os.environ.get("SPARSE_MIN_DOC_FREQ", os.environ.get("SPARSE_MIN_DF", "1"))
+    )
     sparse_encoder = build_sparse_encoder(
         RECIPE_RECORDS,
         dim=sparse_hash_dim,

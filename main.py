@@ -286,7 +286,13 @@ def run_interactive_mode(
             print(format_error(str(e)))
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    threshold_default = float(os.getenv("MATCH_THRESHOLD", "0.10"))
+    sparse_threshold_default = float(os.getenv("SPARSE_THRESHOLD", "0.0"))
+    min_dense_hits_default = int(os.getenv("MIN_DENSE_HITS", "3"))
+    dense_top_k_default = int(os.getenv("DENSE_TOP_K", "10"))
+    sparse_top_k_default = int(os.getenv("SPARSE_TOP_K", "10"))
+
     parser = argparse.ArgumentParser(
         description="Recipe Chatbot MVP - Search your recipe collection or generate new recipes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -319,46 +325,52 @@ Examples:
         "--threshold",
         "-t",
         type=float,
-        default=0.10,
-        help="Minimum relevance score to consider a match (default: 0.10).",
+        default=threshold_default,
+        help="Minimum relevance score to consider a match "
+        f"(default: {threshold_default}).",
     )
     parser.add_argument(
         "--sparse-threshold",
         type=float,
-        default=0.0,
-        help="Minimum relevance score for sparse fallback (default: 0.0).",
+        default=sparse_threshold_default,
+        help="Minimum relevance score for sparse fallback "
+        f"(default: {sparse_threshold_default}).",
     )
     parser.add_argument(
         "--min-dense-hits",
         type=int,
-        default=3,
-        help="Minimum dense hits required before skipping sparse fallback (default: 3).",
+        default=min_dense_hits_default,
+        help="Minimum dense hits required before skipping sparse fallback "
+        f"(default: {min_dense_hits_default}).",
     )
     parser.add_argument(
         "--dense-top-k",
         type=int,
-        default=10,
-        help="Number of dense results to retrieve (default: 10).",
+        default=dense_top_k_default,
+        help=f"Number of dense results to retrieve (default: {dense_top_k_default}).",
     )
     parser.add_argument(
         "--sparse-top-k",
         type=int,
-        default=10,
-        help="Number of sparse results to retrieve (default: 10).",
+        default=sparse_top_k_default,
+        help=f"Number of sparse results to retrieve (default: {sparse_top_k_default}).",
     )
     parser.add_argument(
         "--dense-only",
         action="store_true",
         help="Only use dense search and bypass sparse search (useful for benchmarking).",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main(
-    sparse_hash_dim: int,
-    sparse_min_doc_freq: int,
-) -> None:
+def main() -> None:
     load_dotenv()
+
+    sparse_hash_dim = int(os.getenv("SPARSE_HASH_DIM", str(2**18)))
+    sparse_min_doc_freq_value = os.getenv(
+        "SPARSE_MIN_DOC_FREQ", os.getenv("SPARSE_MIN_DF", "1")
+    )
+    sparse_min_doc_freq = int(sparse_min_doc_freq_value)
 
     # Validate environment
     api_key = os.getenv("PINECONE_API_KEY")
@@ -441,7 +453,4 @@ def main(
 
 
 if __name__ == "__main__":
-    sparse_hash_dim = int(os.getenv("SPARSE_HASH_DIM", str(2**18)))
-    sparse_min_doc_freq_value = os.getenv("SPARSE_MIN_DOC_FREQ", os.getenv("SPARSE_MIN_DF", "1"))
-    sparse_min_doc_freq = int(sparse_min_doc_freq_value)
-    main(sparse_hash_dim, sparse_min_doc_freq)
+    main()
