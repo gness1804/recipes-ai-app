@@ -46,6 +46,7 @@ SPARSE_THRESHOLD=0.0
 MIN_DENSE_HITS=3
 DENSE_TOP_K=10
 SPARSE_TOP_K=10
+SEARCH_DIAGNOSTICS=0
 
 # Web UI — required for persistent encrypted cookies
 SESSION_SECRET=   # generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
@@ -55,6 +56,8 @@ OWNER_OPENAI_API_KEY=your-openai-api-key
 ```
 
 `main.py` now uses these env vars as its CLI defaults, so web and CLI search parameters stay in sync unless you explicitly override flags.
+By default, non-`--dense-only` queries run both dense and sparse retrieval and select the stronger passing result.
+Set `SEARCH_DIAGNOSTICS=1` to append route/score diagnostics to responses in the web UI.
 
 ## Deployment (Streamlit Community Cloud)
 

@@ -64,6 +64,11 @@ EXAMPLE_QUERIES = [
     "A hearty soup recipe for a cold day",
 ]
 
+
+def _is_truthy_env(name: str, default: str = "0") -> bool:
+    value = os.environ.get(name, default).strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
 # ── Pinecone / RAG resource cache (owner-only) ────────────────────────────────
 
 
@@ -163,6 +168,7 @@ def _run_owner_query(user_query: str, api_key: str) -> tuple[str, RecipeSource]:
 
     openai_client = OpenAI(api_key=api_key)
     index, namespace, sparse_encoder = _get_pinecone_resources()
+    diagnostics: dict = {}
 
     # process_query returns a formatted string (CLI format). We strip the
     # separators and header so we get clean markdown for the chat UI.
@@ -178,14 +184,51 @@ def _run_owner_query(user_query: str, api_key: str) -> tuple[str, RecipeSource]:
         min_dense_hits,
         dense_top_k,
         sparse_top_k,
+        diagnostics=diagnostics,
     )
-    return _strip_cli_formatting(raw)
+    text, source = _strip_cli_formatting(raw)
+
+    if _is_truthy_env("SEARCH_DIAGNOSTICS", "0"):
+        dense = diagnostics.get("dense", {})
+        sparse = diagnostics.get("sparse", {})
+        params = diagnostics.get("params", {})
+        index_name = os.environ.get("PINECONE_INDEX", "recipes-vector-db")
+        debug_block = (
+            "\n\n---\n"
+            "### Search Diagnostics\n"
+            f"- mode: `owner`\n"
+            f"- index: `{index_name}`\n"
+            f"- namespace: `{namespace}`\n"
+            f"- route: `{diagnostics.get('route', 'unknown')}`\n"
+            f"- params: `MATCH_THRESHOLD={params.get('threshold')}`, "
+            f"`SPARSE_THRESHOLD={params.get('sparse_threshold')}`, "
+            f"`MIN_DENSE_HITS={params.get('min_dense_hits')}`, "
+            f"`DENSE_TOP_K={params.get('dense_top_k')}`, "
+            f"`SPARSE_TOP_K={params.get('sparse_top_k')}`\n"
+            f"- dense: `hits={dense.get('hit_count', 0)}`, "
+            f"`passes={dense.get('passes_threshold', False)}`, "
+            f"`top_score={dense.get('top_score', 0.0):.4f}`, "
+            f"`top_ids={dense.get('top_ids', [])}`\n"
+            f"- sparse: `hits={sparse.get('hit_count', 0)}`, "
+            f"`passes={sparse.get('passes_threshold', False)}`, "
+            f"`top_score={sparse.get('top_score', 0.0):.4f}`, "
+            f"`top_ids={sparse.get('top_ids', [])}`"
+        )
+        text = f"{text}{debug_block}"
+
+    return text, source
 
 
 def _run_guest_query(user_query: str, api_key: str) -> tuple[str, RecipeSource]:
     """Run LLM-only recipe generation for non-owner users."""
     openai_client = OpenAI(api_key=api_key)
     text = generate_fallback_recipe(user_query, openai_client)
+    if _is_truthy_env("SEARCH_DIAGNOSTICS", "0"):
+        text = (
+            f"{text}\n\n---\n### Search Diagnostics\n"
+            "- mode: `guest`\n"
+            "- route: `llm_only_guest_mode`"
+        )
     return text, RecipeSource.LLM_GENERATED
 
 
