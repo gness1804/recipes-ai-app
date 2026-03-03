@@ -87,6 +87,13 @@ pinecone>=3.0.0
 streamlit-cookies-controller>=0.0.4
 ```
 
+### Known Fixes (Streamlit Cloud)
+
+- `KeyError: 'utils.llm_helper'` at app startup
+  - Fix shipped: add `utils/__init__.py` so `utils` is always treated as a package in cloud runtime.
+- First preset query button after redeploy did nothing
+  - Fix shipped: preserve `pending_query` until API key is available, then consume it.
+
 ### Custom URL Notes
 
 As of March 2, 2026, Streamlit Community Cloud hosts apps on the `*.streamlit.app` domain.  
