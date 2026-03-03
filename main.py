@@ -165,6 +165,7 @@ def process_query(
     dense_top_k: int,
     sparse_top_k: int,
     dense_only: bool = False,
+    diagnostics: dict | None = None,
 ) -> str:
     """
     Process a user query: search RAG database, evaluate match, respond or fallback.
@@ -186,6 +187,22 @@ def process_query(
     Returns:
         Formatted response string
     """
+    if diagnostics is not None:
+        diagnostics.clear()
+        diagnostics.update(
+            {
+                "mode": "dense_only" if dense_only else "hybrid",
+                "params": {
+                    "threshold": threshold,
+                    "sparse_threshold": sparse_threshold,
+                    "min_dense_hits": min_dense_hits,
+                    "dense_top_k": dense_top_k,
+                    "sparse_top_k": sparse_top_k,
+                },
+                "route": None,
+            }
+        )
+
     # Embed the query
     query_vector = embed_text(user_query, embedding_model, openai_client)
 
@@ -194,43 +211,72 @@ def process_query(
         index, namespace, query_vector, user_query, top_k=dense_top_k
     )
 
-    dense_fallback = None
+    dense_passes = False
+    dense_top_score = 0.0
+    dense_sorted_hits: list[dict] = []
     if dense_hits:
-        passes_threshold, top_score, sorted_hits = check_score_threshold(
+        dense_passes, dense_top_score, dense_sorted_hits = check_score_threshold(
             dense_hits, threshold
         )
-        if passes_threshold:
-            if dense_only or len(dense_hits) >= min_dense_hits:
-                response = generate_recipe_response(
-                    user_query, sorted_hits, openai_client
-                )
-                return format_response(response, RecipeSource.RAG_DATABASE, top_score)
-            dense_fallback = (sorted_hits, top_score)
+    if diagnostics is not None:
+        diagnostics["dense"] = {
+            "hit_count": len(dense_hits),
+            "passes_threshold": dense_passes,
+            "top_score": dense_top_score,
+            "top_ids": [hit.get("_id") for hit in dense_sorted_hits[:3]],
+        }
 
+    sparse_hits = []
+    sparse_passes = False
+    sparse_top_score = 0.0
+    sparse_sorted_hits: list[dict] = []
     if not dense_only:
-        # Fall back to sparse search for complex queries
         sparse_hits = search_sparse_recipes(
             index, namespace, query_vector, sparse_encoder, user_query, top_k=sparse_top_k
         )
         if sparse_hits:
-            passes_threshold, top_score, sorted_hits = check_score_threshold(
+            sparse_passes, sparse_top_score, sparse_sorted_hits = check_score_threshold(
                 sparse_hits, sparse_threshold
             )
-            if passes_threshold:
-                response = generate_recipe_response(user_query, sorted_hits, openai_client)
-                return format_response(response, RecipeSource.RAG_SPARSE, top_score)
-            print(
-                "Sparse search results did not meet threshold "
-                f"({sparse_threshold}). Best score: {top_score:.2f}"
-            )
+    if diagnostics is not None:
+        diagnostics["sparse"] = {
+            "hit_count": len(sparse_hits),
+            "passes_threshold": sparse_passes,
+            "top_score": sparse_top_score,
+            "top_ids": [hit.get("_id") for hit in sparse_sorted_hits[:3]],
+        }
 
-    if dense_fallback is not None:
-        sorted_hits, top_score = dense_fallback
-        response = generate_recipe_response(user_query, sorted_hits, openai_client)
-        return format_response(response, RecipeSource.RAG_DATABASE, top_score)
+    dense_eligible = dense_passes and (dense_only or len(dense_hits) >= min_dense_hits)
+
+    # Hybrid mode: evaluate dense and sparse, then choose the stronger result.
+    if dense_eligible and (dense_only or dense_top_score >= sparse_top_score):
+        response = generate_recipe_response(user_query, dense_sorted_hits, openai_client)
+        if diagnostics is not None:
+            diagnostics["route"] = "dense_accepted"
+        return format_response(response, RecipeSource.RAG_DATABASE, dense_top_score)
+
+    if sparse_passes:
+        response = generate_recipe_response(user_query, sparse_sorted_hits, openai_client)
+        if diagnostics is not None:
+            diagnostics["route"] = "sparse_accepted"
+        return format_response(response, RecipeSource.RAG_SPARSE, sparse_top_score)
+
+    if dense_hits:
+        response = generate_recipe_response(user_query, dense_sorted_hits, openai_client)
+        if diagnostics is not None:
+            diagnostics["route"] = "dense_fallback"
+        return format_response(response, RecipeSource.RAG_DATABASE, dense_top_score)
+
+    if sparse_hits:
+        response = generate_recipe_response(user_query, sparse_sorted_hits, openai_client)
+        if diagnostics is not None:
+            diagnostics["route"] = "sparse_fallback"
+        return format_response(response, RecipeSource.RAG_SPARSE, sparse_top_score)
 
     # No good match - generate a recipe
     response = generate_fallback_recipe(user_query, openai_client)
+    if diagnostics is not None:
+        diagnostics["route"] = "llm_fallback"
     return format_response(response, RecipeSource.LLM_GENERATED)
 
 

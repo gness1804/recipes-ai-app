@@ -303,7 +303,7 @@ class TestGenerateFallbackRecipe:
 class TestProcessQuery:
     """Tests for dense/sparse query routing."""
 
-    def test_dense_match_skips_sparse(self):
+    def test_hybrid_runs_sparse_and_selects_dense_when_stronger(self):
         from main import process_query
 
         dense_hits = [{"_id": "recipe-a", "_score": 0.9, "fields": {"content": "A"}}]
@@ -329,9 +329,36 @@ class TestProcessQuery:
             )
 
         dense_search.assert_called_once()
-        sparse_search.assert_not_called()
+        sparse_search.assert_called_once()
         assert "Recipe from your collection" in result
         assert "sparse search" not in result
+
+    def test_hybrid_selects_sparse_when_sparse_stronger(self):
+        from main import process_query
+
+        dense_hits = [{"_id": "recipe-a", "_score": 0.4, "fields": {"content": "A"}}]
+        sparse_hits = [{"_id": "recipe-b", "_score": 0.8, "fields": {"content": "B"}}]
+
+        with patch("main.embed_text", return_value=[0.1]), \
+             patch("main.search_dense_recipes", return_value=dense_hits), \
+             patch("main.search_sparse_recipes", return_value=sparse_hits), \
+             patch("main.generate_recipe_response", return_value="RAG"), \
+             patch("main.generate_fallback_recipe", return_value="LLM"):
+            result = process_query(
+                "test query",
+                MagicMock(),
+                "namespace",
+                MagicMock(),
+                "model",
+                MagicMock(),
+                threshold=0.1,
+                sparse_threshold=0.0,
+                min_dense_hits=1,
+                dense_top_k=10,
+                sparse_top_k=10,
+            )
+
+        assert "sparse search" in result
 
     def test_sparse_fallback_used_when_dense_insufficient(self):
         from main import process_query
@@ -465,6 +492,37 @@ class TestProcessQuery:
 
         sparse_search.assert_not_called()
         assert "Generated recipe" in result
+
+    def test_process_query_populates_diagnostics(self):
+        from main import process_query
+
+        dense_hits = [{"_id": "recipe-a", "_score": 0.6, "fields": {"content": "A"}}]
+        sparse_hits = [{"_id": "recipe-b", "_score": 0.5, "fields": {"content": "B"}}]
+        diagnostics = {}
+
+        with patch("main.embed_text", return_value=[0.1]), \
+             patch("main.search_dense_recipes", return_value=dense_hits), \
+             patch("main.search_sparse_recipes", return_value=sparse_hits), \
+             patch("main.generate_recipe_response", return_value="RAG"), \
+             patch("main.generate_fallback_recipe", return_value="LLM"):
+            process_query(
+                "test query",
+                MagicMock(),
+                "namespace",
+                MagicMock(),
+                "model",
+                MagicMock(),
+                threshold=0.1,
+                sparse_threshold=0.0,
+                min_dense_hits=1,
+                dense_top_k=10,
+                sparse_top_k=10,
+                diagnostics=diagnostics,
+            )
+
+        assert diagnostics["route"] == "dense_accepted"
+        assert diagnostics["dense"]["hit_count"] == 1
+        assert diagnostics["sparse"]["hit_count"] == 1
 
 
 class TestCliConfigDefaults:
