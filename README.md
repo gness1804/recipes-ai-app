@@ -1,6 +1,10 @@
-# Recipes AI App
+# Recipe Chatbot
 
 A personal recipe chatbot that uses RAG (Retrieval-Augmented Generation) with a Pinecone vector database. Ask natural-language questions like "Give me a good weeknight seafood recipe" and the app searches your recipe collection, falling back to LLM generation when no suitable match is found.
+
+https://recipes-ai-chatbot.streamlit.app/
+
+<img width="1461" height="709" alt="Recipe Chatbot screenshot" src="https://github.com/user-attachments/assets/63c15986-1d33-428c-99b0-27a60c0c7fee" />
 
 ## Running the App
 
