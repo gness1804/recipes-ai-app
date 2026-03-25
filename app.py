@@ -24,9 +24,29 @@ import streamlit as st  # noqa: E402
 
 # Sync Streamlit Cloud secrets into os.environ so all modules that read
 # os.environ work in both local (.env) and Streamlit Cloud (st.secrets).
+# Only allowlisted keys are synced to prevent unexpected overrides.
+_ALLOWED_SECRETS = {
+    "PINECONE_API_KEY",
+    "PINECONE_INDEX",
+    "PINECONE_NAMESPACE",
+    "PINECONE_ENVIRONMENT",
+    "OPENAI_API_KEY",
+    "OWNER_OPENAI_API_KEY",
+    "SESSION_SECRET",
+    "EMBEDDING_MODEL",
+    "MATCH_THRESHOLD",
+    "SPARSE_THRESHOLD",
+    "MIN_DENSE_HITS",
+    "DENSE_TOP_K",
+    "SPARSE_TOP_K",
+    "SPARSE_HASH_DIM",
+    "SPARSE_MIN_DOC_FREQ",
+    "SPARSE_MIN_DF",
+    "SEARCH_DIAGNOSTICS",
+}
 try:
     for _k, _v in st.secrets.items():
-        if isinstance(_v, str):
+        if isinstance(_v, str) and _k in _ALLOWED_SECRETS:
             os.environ.setdefault(_k, _v)
 except Exception:
     pass

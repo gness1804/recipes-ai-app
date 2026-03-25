@@ -59,7 +59,14 @@ logger = logging.getLogger(__name__)
 
 _detector = PromptInjectionDetector()
 _sanitizer = InputSanitizer(max_input_length=2000)
-BLOCK_SCORE = int(os.environ.get("PROMPT_INJECTION_BLOCK_SCORE", "10"))
+_raw_block_score = int(os.environ.get("PROMPT_INJECTION_BLOCK_SCORE", "10"))
+BLOCK_SCORE = max(1, min(_raw_block_score, 20))
+if _raw_block_score != BLOCK_SCORE:
+    logger.warning(
+        "PROMPT_INJECTION_BLOCK_SCORE=%d clamped to %d (valid range: 1-20)",
+        _raw_block_score,
+        BLOCK_SCORE,
+    )
 
 
 class PromptInjectionError(Exception):
