@@ -23,6 +23,7 @@ Usage:
 """
 
 import argparse
+import logging
 import os
 import sys
 import time
@@ -47,6 +48,40 @@ from utils.response_formatter import (
     format_welcome,
 )
 from utils.sparse_helper import SparseEncoder, build_sparse_encoder
+from validation.detector import PromptInjectionDetector
+from validation.sanitizer import InputSanitizer
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Prompt injection validation
+# ---------------------------------------------------------------------------
+
+_detector = PromptInjectionDetector()
+_sanitizer = InputSanitizer(max_input_length=2000)
+BLOCK_SCORE = int(os.environ.get("PROMPT_INJECTION_BLOCK_SCORE", "10"))
+
+
+class PromptInjectionError(Exception):
+    """Raised when input scores at or above the block threshold."""
+
+    def __init__(self, risk_result: dict):
+        self.risk_result = risk_result
+        super().__init__(
+            f"Prompt injection blocked: risk={risk_result['risk_level']}, "
+            f"score={risk_result['score']}"
+        )
+
+
+def validate_and_sanitize_text(text: str) -> str:
+    """Validate input for prompt injection and return sanitized text.
+
+    Raises PromptInjectionError if the risk score meets or exceeds BLOCK_SCORE.
+    """
+    risk = _detector.calculate_risk_score(text, block_score=BLOCK_SCORE)
+    if risk["should_block"]:
+        raise PromptInjectionError(risk)
+    return _sanitizer.sanitize(text)
 
 
 def upsert_vectors(
@@ -187,6 +222,9 @@ def process_query(
     Returns:
         Formatted response string
     """
+    # Validate and sanitize user input before any LLM/search calls
+    user_query = validate_and_sanitize_text(user_query)
+
     if diagnostics is not None:
         diagnostics.clear()
         diagnostics.update(
@@ -328,6 +366,12 @@ def run_interactive_mode(
                 dense_only=dense_only,
             )
             print(result)
+        except PromptInjectionError:
+            print(
+                "\nSorry, your query could not be processed because it "
+                "contains content that resembles a prompt injection attempt. "
+                "Please rephrase your question to focus on finding a recipe.\n"
+            )
         except Exception as e:
             print(format_error(str(e)))
 
@@ -466,21 +510,29 @@ def main() -> None:
     # Process query or enter interactive mode
     if args.query:
         # Single query mode
-        result = process_query(
-            args.query,
-            index,
-            namespace,
-            openai_client,
-            embedding_model,
-            sparse_encoder,
-            args.threshold,
-            args.sparse_threshold,
-            args.min_dense_hits,
-            args.dense_top_k,
-            args.sparse_top_k,
-            dense_only=args.dense_only,
-        )
-        print(result)
+        try:
+            result = process_query(
+                args.query,
+                index,
+                namespace,
+                openai_client,
+                embedding_model,
+                sparse_encoder,
+                args.threshold,
+                args.sparse_threshold,
+                args.min_dense_hits,
+                args.dense_top_k,
+                args.sparse_top_k,
+                dense_only=args.dense_only,
+            )
+            print(result)
+        except PromptInjectionError:
+            print(
+                "Error: Your query could not be processed because it "
+                "contains content that resembles a prompt injection attempt. "
+                "Please rephrase your question to focus on finding a recipe."
+            )
+            sys.exit(1)
     else:
         # Interactive mode
         run_interactive_mode(
