@@ -34,7 +34,7 @@ _STOPWORDS = {
 
 
 def _hash_token(token: str, dim: int) -> int:
-    digest = hashlib.md5(token.encode("utf-8")).digest()
+    digest = hashlib.sha256(token.encode("utf-8")).digest()
     return int.from_bytes(digest[:4], "little") % dim
 
 
