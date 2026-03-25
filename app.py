@@ -43,6 +43,7 @@ from openai import OpenAI  # noqa: E402
 from session import decrypt_api_key, encrypt_api_key, is_owner, mask_api_key  # noqa: E402
 from utils.llm_helper import generate_fallback_recipe  # noqa: E402
 from utils.response_formatter import RecipeSource  # noqa: E402
+from main import PromptInjectionError, validate_and_sanitize_text  # noqa: E402
 
 # ── Owner-only imports (Pinecone, RAG) ────────────────────────────────────────
 # We import lazily inside functions so non-owner users never trigger Pinecone
@@ -403,6 +404,16 @@ def _process_query_safe(
     Returns (response_text, source, error_message).
     Exactly one of (response_text, error_message) will be non-None.
     """
+    # Validate all user input before it reaches any LLM or search path
+    try:
+        user_query = validate_and_sanitize_text(user_query)
+    except PromptInjectionError:
+        return None, None, (
+            "Your query could not be processed because it contains content "
+            "that resembles a prompt injection attempt. "
+            "Please rephrase your question to focus on finding a recipe."
+        )
+
     fn = _run_owner_query if owner else _run_guest_query
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
