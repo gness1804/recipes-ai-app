@@ -1,0 +1,60 @@
+# Version control
+.git/
+.gitignore
+.github/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Editor / IDE / agent metadata
+.idea/
+.vscode/
+.cursor/
+.claude/
+.agents/
+.devcontainer/
+.grepai/
+
+# Local secrets / env (Render uses dashboard env vars)
+.env
+.streamlit/secrets.toml
+.streamlit/secrets.toml.example
+
+# Offline-only modules (not used by app.py / main.py at runtime)
+baml_client/
+baml_src/
+v2/
+scripts/
+tests/
+tmp/
+
+# Source recipe data — only data/combined_recipes.py is needed at runtime
+data/raw-recipes/
+data/processed-recipes/
+data/cache/
+data/schemas/
+data/seeds.py
+data/recipes_for_vector_db.py
+data/target_document_format.md
+data/__pycache__/
+
+# Project metadata
+.bumpversion.cfg
+install-agent.sh
+AGENTS.md
+CLAUDE.md
+
+# OS
+.DS_Store
