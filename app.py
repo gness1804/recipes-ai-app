@@ -58,6 +58,22 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Hide Streamlit's default chrome (hamburger menu, footer, Deploy button) for a
+# cleaner production look on Render. Note: do NOT hide `header` — it contains
+# the sidebar collapse/expand toggle that users need to reopen the sidebar.
+st.markdown(
+    """
+    <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        [data-testid="stMainMenu"] {visibility: hidden;}
+        [data-testid="stAppDeployButton"] {visibility: hidden;}
+        [data-testid="stToolbarActions"] {visibility: hidden;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 from openai import OpenAI  # noqa: E402
 
 from session import decrypt_api_key, encrypt_api_key, is_owner, mask_api_key  # noqa: E402
