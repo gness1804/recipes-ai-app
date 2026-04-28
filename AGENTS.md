@@ -35,7 +35,7 @@ The app will search the user's personal recipe collection first, then fall back 
 Required in `.env`:
 - `PINECONE_API_KEY` - Pinecone API key
 - `PINECONE_INDEX` - Index name (default: `recipes-vector-db`)
-- `PINECONE_NAMESPACE` - Namespace (default: `main_recipes`)
+- `PINECONE_NAMESPACE` - Namespace (default: `recipes`)
 - `OPENAI_API_KEY` - OpenAI API key
 - `EMBEDDING_MODEL` - Embedding model (default: `text-embedding-3-small`)
 

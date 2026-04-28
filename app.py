@@ -126,7 +126,7 @@ def _get_pinecone_resources():
 
     pc = Pinecone(api_key=api_key)
     index_name = os.environ.get("PINECONE_INDEX", "recipes-vector-db")
-    namespace = os.environ.get("PINECONE_NAMESPACE", "main_recipes")
+    namespace = os.environ.get("PINECONE_NAMESPACE", "recipes")
     index = pc.Index(index_name)
 
     sparse_hash_dim = int(os.environ.get("SPARSE_HASH_DIM", str(2**18)))

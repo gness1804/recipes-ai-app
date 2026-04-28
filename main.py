@@ -484,7 +484,7 @@ def main() -> None:
     pc = Pinecone(api_key=api_key, environment=os.getenv("PINECONE_ENVIRONMENT"))
     index_name = os.getenv("PINECONE_INDEX", "recipes-vector-db")
     index = pc.Index(index_name)
-    namespace = os.getenv("PINECONE_NAMESPACE", "main_recipes")
+    namespace = os.getenv("PINECONE_NAMESPACE", "recipes")
 
     openai_client = OpenAI(api_key=openai_api_key)
     embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")

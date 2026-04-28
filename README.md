@@ -39,7 +39,7 @@ OPENAI_API_KEY=your-openai-api-key
 
 # Optional — defaults shown
 PINECONE_INDEX=recipes-vector-db
-PINECONE_NAMESPACE=main_recipes
+PINECONE_NAMESPACE=recipes
 EMBEDDING_MODEL=text-embedding-3-small
 SPARSE_HASH_DIM=262144
 SPARSE_MIN_DOC_FREQ=1
