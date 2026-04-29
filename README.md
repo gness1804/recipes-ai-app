@@ -2,7 +2,7 @@
 
 A personal recipe chatbot that uses RAG (Retrieval-Augmented Generation) with a Pinecone vector database. Ask natural-language questions like "Give me a good weeknight seafood recipe" and the app searches your recipe collection, falling back to LLM generation when no suitable match is found.
 
-https://recipes-ai-chatbot.streamlit.app/
+https://recipes-ai-app.onrender.com/
 
 <img width="1461" height="709" alt="Recipe Chatbot screenshot" src="https://github.com/user-attachments/assets/63c15986-1d33-428c-99b0-27a60c0c7fee" />
 
@@ -39,7 +39,7 @@ OPENAI_API_KEY=your-openai-api-key
 
 # Optional — defaults shown
 PINECONE_INDEX=recipes-vector-db
-PINECONE_NAMESPACE=main_recipes
+PINECONE_NAMESPACE=recipes
 EMBEDDING_MODEL=text-embedding-3-small
 SPARSE_HASH_DIM=262144
 SPARSE_MIN_DOC_FREQ=1
@@ -63,61 +63,45 @@ OWNER_OPENAI_API_KEY=your-openai-api-key
 By default, non-`--dense-only` queries run both dense and sparse retrieval and select the stronger passing result.
 Set `SEARCH_DIAGNOSTICS=1` to append route/score diagnostics to responses in the web UI.
 
-## Deployment (Streamlit Community Cloud)
+## Deployment (Render)
 
-1. Push the repo to GitHub.
-2. Go to [share.streamlit.io](https://share.streamlit.io) and connect the repo.
-3. Select this repository and branch.
-4. Set the app entrypoint to `app.py`.
-5. In **App settings -> Secrets**, paste values from `.streamlit/secrets.toml.example` (replace placeholders).
-6. Deploy the app.
+Deployed on [Render](https://render.com) using the Starter plan ($7/mo, always-on, full WebSocket support). The runtime image is built from the project `Dockerfile`, which intentionally excludes offline-only modules (`baml_client/`, `baml_src/`, `v2/`, `scripts/`, `tests/`, raw recipe sources) to keep the image small.
 
-If you want to validate locally with Streamlit-style secrets first:
+1. Create a new **Web Service** on Render and connect this repo.
+2. Set **Runtime** to **Docker** — do not use the auto-detected "Python 3" runtime, which would ignore the Dockerfile.
+3. Choose the **Starter** plan (always-on; cold starts are not acceptable for a chat UI).
+4. Set the tracked branch to `master`.
+5. In **Environment**, add the variables listed below. Generate a fresh `SESSION_SECRET` for production — do not reuse any development value.
+6. Deploy. The app is served on port `8501` and reachable at `https://<service-name>.onrender.com`.
 
-```bash
-mkdir -p .streamlit && cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+### Required environment variables
+
+- `PINECONE_API_KEY` — Pinecone API key
+- `OPENAI_API_KEY` — OpenAI API key
+- `OWNER_OPENAI_API_KEY` — owner key; users who paste this key in the sidebar get full RAG access
+- `SESSION_SECRET` — fresh Fernet key (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`)
+
+### Recommended tuning variables
+
+```env
+PINECONE_INDEX=recipes-vector-db
+PINECONE_NAMESPACE=recipes
+EMBEDDING_MODEL=text-embedding-3-small
+SPARSE_HASH_DIM=262144
+SPARSE_MIN_DOC_FREQ=1
+MATCH_THRESHOLD=0.10
+SPARSE_THRESHOLD=0.0
+MIN_DENSE_HITS=3
+DENSE_TOP_K=10
+SPARSE_TOP_K=10
+# SEARCH_DIAGNOSTICS=1   # optional — appends route/score diagnostics to responses
 ```
 
-Then fill in real keys and run:
+`PINECONE_NAMESPACE` must match the actual namespace in your Pinecone index. A mismatch silently returns zero hits and falls back to LLM generation.
 
-```bash
-source venv/bin/activate && streamlit run app.py
-```
+### Custom domain
 
-### Deployment Troubleshooting
-
-- Error: `No matching distribution found for streamlit-cookies-controller>=0.3.0`
-  - Fix: use `streamlit-cookies-controller>=0.0.4`.
-- Error from Pinecone package import saying `pinecone-client` was renamed
-  - Fix: replace `pinecone-client` with `pinecone` in dependencies.
-
-Current expected dependency lines:
-
-```txt
-pinecone>=3.0.0
-streamlit-cookies-controller>=0.0.4
-```
-
-### Known Fixes (Streamlit Cloud)
-
-- `KeyError: 'utils.llm_helper'` at app startup
-  - Fix shipped: add `utils/__init__.py` so `utils` is always treated as a package in cloud runtime.
-- First preset query button after redeploy did nothing
-  - Fix shipped: preserve `pending_query` until API key is available, then consume it.
-
-### Custom URL Notes
-
-As of March 2, 2026, Streamlit Community Cloud hosts apps on the `*.streamlit.app` domain.  
-That means you can choose a custom app subdomain like:
-
-- `recipes-ai-chatbot.streamlit.app`
-
-For a true custom domain like `recipes-ai-chatbot.com`, Streamlit Community Cloud does not provide direct custom-domain mapping. Your options are:
-
-1. Keep Streamlit hosting and use a redirect/proxy layer in front (for example via Cloudflare), with the caveat that this is outside Streamlit's native setup.
-2. Deploy on infrastructure where you control the web server/domain mapping directly, then point Cloudflare DNS there.
-
-For this project, the fastest path to satisfy a custom URL requirement is using a custom Streamlit subdomain (`recipes-ai-chatbot.streamlit.app`).
+Render supports custom domains directly on the Starter plan via dashboard → Settings → Custom Domains. None is configured for this project; the default `*.onrender.com` URL is used.
 
 ## Installing Dependencies
 

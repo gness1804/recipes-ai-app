@@ -5,3 +5,6 @@ enableXsrfProtection = true
 
 [client]
 showSidebarNavigation = false
+
+[ui]
+hideTopBar = true

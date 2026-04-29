@@ -76,7 +76,7 @@ def main():
         sys.exit(1)
 
     index_name = os.getenv("PINECONE_INDEX", "recipes-vector-db")
-    namespace = os.getenv("PINECONE_NAMESPACE", "main_recipes")
+    namespace = os.getenv("PINECONE_NAMESPACE", "recipes")
     embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
     sparse_hash_dim = int(os.getenv("SPARSE_HASH_DIM", str(2**18)))
     sparse_min_doc_freq = int(
