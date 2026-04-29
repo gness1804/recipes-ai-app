@@ -146,3 +146,16 @@ Tests should cover:
 - Pinecone upsert/query operations
 - Recipe matching logic
 - Fallback behavior when no matches found
+
+## Versioning
+
+Version bumps MUST go through `bump2version` — never edit `pyproject.toml`'s `version` field by hand.
+
+```bash
+bump2version minor   # significant feature or refactor
+bump2version patch   # bug fix
+```
+
+`bump2version` updates `pyproject.toml` and `.bumpversion.cfg` in lockstep, creates a `chore: bump version X → Y` commit, and tags `vX.Y.Z`. Manual edits cause silent drift between the two config files (this happened across 0.7.0–0.8.0 and forced agents to abandon the tool).
+
+If `bump2version` errors, fix the config rather than working around it manually. Common failure mode: `.bumpversion.cfg` `current_version` doesn't match the actual `version` string in `pyproject.toml`. Re-sync the cfg, then re-run.
