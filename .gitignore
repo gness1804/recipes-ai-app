@@ -60,3 +60,6 @@ data/cache/*
 v2/raw-recipes/
 
 .grepai/
+
+# Claude Code per-developer local settings (permission grants etc.)
+.claude/settings.local.json
