@@ -6,7 +6,7 @@ github_issue: 32
 **Date:** 2026-04-27 (in progress)
 **Related:** `.cursor/refactors/2-use-a-more-professional-deployment-solution.md`
 **Modeled on:** receipt-ranger migration (`~/Desktop/receipt-ranger/.cursor/progress/10-DONE-render-migration-handoff.md`)
-**Status:** Phases 1–3 complete; Phase 4 (functional verification) pending — to be done 2026-04-28
+**Status:** Phases 1–4 and 6 complete (2026-04-29). Phase 5 skipped (no DNS cutover). Phase 7 deferred.
 **Render URL:** https://recipes-ai-app.onrender.com/
 **Resume from Claude session:** `90bc7f0e-900d-4fd5-8488-070514861562` (in `~/.claude/projects/-Users-grahamnessler-Desktop-pinecone-recipes-ai-app/`)
 
@@ -110,7 +110,7 @@ This is the test that would have failed if the `PINECONE_NAMESPACE` fix had been
   - Update `README.md` Deployment section: replace "Streamlit Community Cloud" instructions with Render setup
   - Remove app from SCC dashboard (https://share.streamlit.io)
   - Open PR `redeploy → master`, merge
-  - **Update Render's tracked branch** from `redeploy` to `master` in Settings → Build & Deploy (Render does NOT auto-switch — receipt-ranger lesson)
+  - ~~**Update Render's tracked branch** from `redeploy` to `master` in Settings → Build & Deploy (Render does NOT auto-switch — receipt-ranger lesson)~~ — **Outdated as of 2026-04-29:** Render now auto-switches the tracked branch to the repo's default branch when the configured branch is deleted. Verified in Render Events: "Branch changed to master / Previous branch redeploy was deleted from source repository." Manual switch is no longer required.
   - `bump2version minor` per house rules (this is a significant refactor)
 - **Phase 7 — optional polish:** custom favicon (skipped in receipt-ranger; same call here unless desired)
 
@@ -161,3 +161,7 @@ This is a separate logical change from the Render migration, but it would have c
 - **`baml-py` should be excluded** from production install when BAML is offline-only. It pins exact versions and would fight any future BAML upgrade.
 - **301 redirects cache aggressively** — if/when DNS cutover happens later, expect to clear browser cache or use incognito to test.
 - **CFS pre-commit `content_conflict` warnings are non-blocking** — same behavior as in receipt-ranger.
+- **Render auto-switches tracked branch when source branch is deleted** (verified 2026-04-29). The receipt-ranger lesson saying otherwise is now outdated. Deleting the source branch on origin will cause Render to fall back to the repo's GitHub default branch automatically and surface a "Branch changed to X" event.
+- **`bump2version` 1.x reads `.bumpversion.cfg`, not `pyproject.toml`** — the `[tool.bump2version]` block in `pyproject.toml` is not read by the tool and silently drifts from the real config. Keep the source of truth in `.bumpversion.cfg`. Also: the commit-message config key is `message =`, not `commit_message =` (the latter is silently ignored).
+
+<!-- DONE -->
