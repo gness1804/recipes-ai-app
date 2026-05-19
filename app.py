@@ -367,7 +367,6 @@ def _render_sidebar(cookie) -> None:
             key="theme_toggle",
             use_container_width=True,
             icon=toggle_icon,
-            help="Toggle between dark and light themes",
         ):
             toggle_theme()
             st.rerun()
