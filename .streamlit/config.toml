@@ -8,3 +8,13 @@ showSidebarNavigation = false
 
 [ui]
 hideTopBar = true
+
+# Graham Nessler design system — dark theme is the default canvas.
+# In-app CSS overrides handle the light theme via a class on the root.
+[theme]
+base = "dark"
+primaryColor = "#F5F5F5"
+backgroundColor = "#0A0A0A"
+secondaryBackgroundColor = "#171717"
+textColor = "#F5F5F5"
+font = "sans serif"
