@@ -140,6 +140,10 @@
 .gn-sidebar-header svg {
   width: 28px;
   height: 28px;
+  /* Steam swirls in the soup-bowl logo use stroke="currentColor".
+     Setting color here makes them theme-aware: light text on dark,
+     dark text on light, both contrasty against the sidebar bg. */
+  color: var(--fg);
 }
 .gn-sidebar-header .gn-wordmark {
   font-family: var(--font-sans);

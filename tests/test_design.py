@@ -6,17 +6,18 @@ from utils import design
 
 
 def test_logo_path_exists():
-    """The cat-logo SVG is bundled in assets/ and is reachable."""
+    """The soup-bowl logo SVG is bundled in assets/ and is reachable."""
     path = design.get_logo_path()
     assert os.path.isfile(path), f"logo SVG not found at {path}"
 
 
-def test_logo_svg_renders_cat_mark():
-    """The inline logo SVG includes the brand-red chest stripe and silver fur."""
+def test_logo_svg_uses_brand_palette():
+    """The inline logo SVG uses the GN brand palette: silver bowl, red soup, black rim."""
     svg = design.get_logo_svg()
     assert svg.startswith("<svg"), "logo should be inline SVG markup"
-    assert "#dc2626" in svg.lower(), "brand-red chest stripe expected"
-    assert "#d1d5db" in svg.lower(), "silver fur color expected"
+    assert "#dc2626" in svg.lower(), "brand-red (soup) expected"
+    assert "#d1d5db" in svg.lower(), "silver (bowl + steam) expected"
+    assert "#0a0a0a" in svg.lower(), "near-black (outline) expected"
 
 
 def test_overrides_css_includes_brand_tokens():

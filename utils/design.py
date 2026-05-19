@@ -7,7 +7,6 @@ brand assets (cat logo, sun/moon icons) and theme-toggling.
 from __future__ import annotations
 
 import os
-from functools import lru_cache
 
 import streamlit as st
 
@@ -17,15 +16,13 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _ASSETS_DIR = os.path.join(_PROJECT_ROOT, "assets")
 
 _OVERRIDES_CSS_PATH = os.path.join(_ASSETS_DIR, "streamlit_overrides.css")
-_LOGO_SVG_PATH = os.path.join(_ASSETS_DIR, "logo-cat.svg")
+_LOGO_SVG_PATH = os.path.join(_ASSETS_DIR, "logo-soup.svg")
 
-@lru_cache(maxsize=1)
 def _load_overrides_css() -> str:
     with open(_OVERRIDES_CSS_PATH, "r", encoding="utf-8") as f:
         return f.read()
 
 
-@lru_cache(maxsize=1)
 def _load_logo_svg() -> str:
     with open(_LOGO_SVG_PATH, "r", encoding="utf-8") as f:
         return f.read()
