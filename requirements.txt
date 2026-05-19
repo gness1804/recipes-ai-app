@@ -1,5 +1,8 @@
 # Pinecone and OpenAI
-pinecone>=3.0.0
+# Pin Pinecone to v8.x — the integrated-inference search API used in
+# main.py (index.search(namespace=..., query={...}, rerank={...})) is
+# only stable in v8. Newer majors have renamed/removed the `query` kwarg.
+pinecone>=8.0.0,<9.0.0
 openai>=1.0.0
 
 # PDF processing
