@@ -13,6 +13,7 @@ COPY app.py main.py session.py ./
 COPY utils/ utils/
 COPY validation/ validation/
 COPY .streamlit/ .streamlit/
+COPY assets/ assets/
 
 RUN mkdir -p data
 COPY data/combined_recipes.py data/
