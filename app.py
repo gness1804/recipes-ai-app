@@ -51,9 +51,18 @@ try:
 except Exception:
     pass
 
+from utils.design import (  # noqa: E402
+    current_theme,
+    get_logo_path,
+    get_logo_svg,
+    init_theme,
+    inject_design_system,
+    toggle_theme,
+)
+
 st.set_page_config(
     page_title="Recipe Chatbot",
-    page_icon="🍳",
+    page_icon=get_logo_path(),
     layout="centered",
     initial_sidebar_state="expanded",
 )
@@ -95,10 +104,10 @@ COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days in seconds
 QUERY_TIMEOUT = 30  # seconds before the query is abandoned with an error
 
 EXAMPLE_QUERIES = [
-    "Give me a good weeknight recipe that's vegetarian",
-    "I want a nice seafood recipe for date night",
-    "Easy beef dinner under 30 minutes",
-    "A hearty soup recipe for a cold day",
+    "A vegetarian weeknight recipe",
+    "A seafood recipe for date night",
+    "An easy beef dinner under 30 minutes",
+    "A hearty soup for a cold day",
 ]
 
 
@@ -302,32 +311,78 @@ def _strip_cli_formatting(formatted: str) -> tuple[str, RecipeSource]:
 
 
 def _source_badge(source: RecipeSource, owner: bool) -> str:
-    """Return a short markdown badge string for the recipe source."""
+    """Return a small HTML pill describing where the recipe came from."""
     if not owner:
-        return "_AI-generated recipe_"
+        return (
+            '<span class="gn-source-badge">AI-generated recipe</span>'
+        )
     if source == RecipeSource.RAG_DATABASE:
-        return "_From your recipe collection (dense search)_"
+        return (
+            '<span class="gn-source-badge collection">'
+            'From your collection · dense search'
+            "</span>"
+        )
     if source == RecipeSource.RAG_SPARSE:
-        return "_From your recipe collection (sparse search)_"
-    return "_AI-generated recipe (no collection match found)_"
+        return (
+            '<span class="gn-source-badge collection">'
+            'From your collection · sparse search'
+            "</span>"
+        )
+    return (
+        '<span class="gn-source-badge">'
+        'AI-generated · no collection match'
+        "</span>"
+    )
 
 
 # ── UI sections ────────────────────────────────────────────────────────────────
 
 
 def _render_sidebar(cookie) -> None:
-    """Render the sidebar: conversation history and controls."""
+    """Render the sidebar: brand header, conversation history, API key."""
     with st.sidebar:
-        st.title("🍳 Recipe Chatbot")
+        # Brand header — cat logo + wordmark + theme toggle
+        st.markdown(
+            (
+                '<div class="gn-sidebar-header">'
+                f'{get_logo_svg()}'
+                '<div class="gn-wordmark">Recipe <span class="accent">chatbot</span></div>'
+                "</div>"
+            ),
+            unsafe_allow_html=True,
+        )
+
+        # Theme toggle — sun icon when dark is active, moon when light is active.
+        # Material icons (Heroicons-style outline, not emoji) keep us within the
+        # brand rule that forbids emoji in production UI.
+        theme = current_theme()
+        if theme == "dark":
+            toggle_label = "Light theme"
+            toggle_icon = ":material/light_mode:"
+        else:
+            toggle_label = "Dark theme"
+            toggle_icon = ":material/dark_mode:"
+        if st.button(
+            toggle_label,
+            key="theme_toggle",
+            use_container_width=True,
+            icon=toggle_icon,
+        ):
+            toggle_theme()
+            st.rerun()
+
         st.divider()
 
-        if st.button("＋ New conversation", use_container_width=True, type="primary"):
+        if st.button("New conversation", use_container_width=True, type="primary"):
             _start_new_conversation()
             st.rerun()
 
         convs = st.session_state.conversations
         if convs:
-            st.markdown("**Past conversations**")
+            st.markdown(
+                '<div class="gn-section-label">Past conversations</div>',
+                unsafe_allow_html=True,
+            )
             for i, conv in enumerate(convs):
                 label = conv["title"]
                 active = i == st.session_state.active_conv_index
@@ -337,7 +392,7 @@ def _render_sidebar(cookie) -> None:
                     st.rerun()
 
             st.divider()
-            if st.button("🗑️ Clear all history", use_container_width=True):
+            if st.button("Clear all history", use_container_width=True):
                 _clear_all_history()
                 st.rerun()
 
@@ -349,17 +404,17 @@ def _render_api_key_section(cookie) -> None:
     """Render the API key input inside the sidebar."""
     has_token = bool(st.session_state.api_key_token)
 
-    with st.expander("🔑 API Key", expanded=not has_token):
+    with st.expander("API key", expanded=not has_token):
         st.markdown(
-            "Enter your OpenAI API key. It's encrypted with Fernet symmetric "
-            "encryption and stored as a secure browser cookie for 7 days — "
-            "never saved as plaintext."
+            "Your OpenAI API key is encrypted with Fernet symmetric encryption "
+            "and stored as a secure browser cookie for 7 days — never saved "
+            "as plaintext."
         )
 
         if has_token:
             decrypted = decrypt_api_key(st.session_state.api_key_token)
             masked = mask_api_key(decrypted) if decrypted else "Invalid token"
-            st.success(f"✓ Key configured: `{masked}`")
+            st.success(f"Key configured · `{masked}`")
             if st.button("Change API key", key="change_key_btn"):
                 st.session_state.api_key_token = ""
                 st.session_state.api_key_clear_pending = True
@@ -377,7 +432,7 @@ def _render_api_key_section(cookie) -> None:
                 if cookie is not None:
                     cookie.set(COOKIE_NAME, token, max_age=COOKIE_MAX_AGE)
                 masked = mask_api_key(api_key_input)
-                st.success(f"✓ Key configured: `{masked}`")
+                st.success(f"Key configured · `{masked}`")
 
 
 def _render_chat() -> None:
@@ -385,10 +440,19 @@ def _render_chat() -> None:
     messages = _active_messages()
 
     if not messages:
-        # Welcome screen
-        st.markdown("## What recipe are you looking for?")
-        st.markdown("Ask me anything about recipes. I'll search your collection or generate one for you.")
-        st.markdown("**Try asking:**")
+        # Welcome screen — editorial hero block with serif headline.
+        st.markdown(
+            (
+                '<div class="gn-welcome">'
+                '<div class="eyebrow">Recipe chatbot</div>'
+                "<h1>What are you cooking?</h1>"
+                '<p class="lede">Ask in plain English. I will search your '
+                "collection first and generate a recipe only if nothing fits.</p>"
+                '<div class="prompts-label">Try asking</div>'
+                "</div>"
+            ),
+            unsafe_allow_html=True,
+        )
         cols = st.columns(2)
         for i, example in enumerate(EXAMPLE_QUERIES):
             with cols[i % 2]:
@@ -399,7 +463,7 @@ def _render_chat() -> None:
         # Render message history
         for msg in messages:
             with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
+                st.markdown(msg["content"], unsafe_allow_html=True)
 
 
 def _prepare_conversation(user_query: str) -> tuple[int, str] | None:
@@ -504,6 +568,8 @@ def main() -> None:
     from streamlit_cookies_controller import CookieController
 
     _init_session_state()
+    init_theme()
+    inject_design_system()
 
     cookie = CookieController()
 
@@ -524,7 +590,7 @@ def main() -> None:
 
         has_key = bool(st.session_state.api_key_token)
         placeholder = (
-            "Ask me for a recipe..." if has_key
+            "Ask for a recipe..." if has_key
             else "Enter your API key in the sidebar to get started"
         )
 
@@ -560,12 +626,12 @@ def main() -> None:
                         )
 
                     if error:
-                        content = f"⚠️ {error}"
+                        content = error
                         st.warning(content)
                     else:
                         badge = _source_badge(source, owner)
-                        content = f"{text}\n\n---\n{badge}"
-                        st.markdown(content)
+                        content = f"{text}\n\n---\n\n{badge}"
+                        st.markdown(content, unsafe_allow_html=True)
 
                 st.session_state.conversations[conv_idx]["messages"].append(
                     {"role": "assistant", "content": content}
