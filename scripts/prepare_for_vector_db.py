@@ -276,7 +276,7 @@ def main():
                     "difficulty": "medium",
                     "prepTimeMinutes": None,
                 }
-                print(f"parsed (dry-run)")
+                print("parsed (dry-run)")
             else:
                 # Classify with LLM
                 classification = classify_recipe(

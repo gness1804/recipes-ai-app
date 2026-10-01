@@ -21,8 +21,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from v2.recipes_for_vector_db import RECIPE_RECORDS as V2_RECORDS
-from data.recipes_for_vector_db import RECIPE_RECORDS as DATA_RECORDS
+from v2.recipes_for_vector_db import RECIPE_RECORDS as V2_RECORDS  # noqa: E402 - needs sys.path above
+from data.recipes_for_vector_db import RECIPE_RECORDS as DATA_RECORDS  # noqa: E402 - needs sys.path above
 
 
 def combine_datasets(v2_records: list[dict], data_records: list[dict]) -> list[dict]:

@@ -1,6 +1,5 @@
 """Tests for session.py — API key encryption and owner detection."""
 
-import os
 
 import pytest
 
@@ -41,7 +40,7 @@ class TestEncryptDecrypt:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         token = s.encrypt_api_key("sk-test1234567890")
@@ -51,7 +50,7 @@ class TestEncryptDecrypt:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         t1 = s.encrypt_api_key("sk-aaa")
@@ -62,7 +61,7 @@ class TestEncryptDecrypt:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         assert s.decrypt_api_key("") is None
@@ -71,7 +70,7 @@ class TestEncryptDecrypt:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         assert s.decrypt_api_key("not-a-valid-fernet-token") is None
@@ -80,7 +79,7 @@ class TestEncryptDecrypt:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         token = s.encrypt_api_key("sk-hello")
@@ -92,7 +91,7 @@ class TestMaskApiKey:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         masked = s.mask_api_key("sk-abcdefghijklmnopqrst")
@@ -104,7 +103,7 @@ class TestMaskApiKey:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         assert s.mask_api_key("short") == "***"
@@ -113,7 +112,7 @@ class TestMaskApiKey:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         assert s.mask_api_key("12345678901") == "***"
@@ -122,7 +121,7 @@ class TestMaskApiKey:
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            import importlib, sys
+            import sys
             sys.modules.pop("session", None)
             import session as s
         result = s.mask_api_key("123456789012")

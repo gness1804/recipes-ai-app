@@ -113,7 +113,7 @@ def main():
     cloud = "aws"
     region = "us-east-1"
 
-    print(f"\nMigration plan:")
+    print("\nMigration plan:")
     print(f"  1. Delete index '{index_name}'")
     print(f"  2. Create index '{index_name}' with metric='{target_metric}', "
           f"dimension={dimension}, cloud={cloud}, region={region}")

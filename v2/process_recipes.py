@@ -14,25 +14,24 @@ Usage:
 import argparse
 import base64
 import json
-import os
 import sys
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
 
 from dotenv import load_dotenv
 from pdf2image import convert_from_path
 
-# Load environment variables from .env file
+# Load environment variables from .env file. This must run before the BAML
+# imports below: baml_client/globals.py snapshots os.environ at import time.
 load_dotenv()
 
-import baml_py
+import baml_py  # noqa: E402
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from baml_client.sync_client import b
-from baml_client.types import Recipe
+from baml_client.sync_client import b  # noqa: E402
+from baml_client.types import Recipe  # noqa: E402
 
 # Constants
 V2_DIR = Path(__file__).parent
@@ -309,7 +308,6 @@ def process_recipes(force: bool = False, dry_run: bool = False) -> None:
     # Determine which files need processing
     files_to_process = []
     for file in raw_files:
-        file_slug = slugify(file.name)
         if force or file.name not in manifest:
             files_to_process.append(file)
         else:
