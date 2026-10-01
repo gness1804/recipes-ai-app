@@ -9,7 +9,6 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 # Add scripts directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
@@ -19,8 +18,9 @@ from transform_recipes import (
     MARKDOWN_EXTENSIONS,
     PDF_EXTENSIONS,
     extract_recipe_name,
-    get_existing_processed_recipes,
     get_raw_recipes,
+    load_manifest,
+    save_manifest,
     slugify,
     strip_markdown_fences,
 )
@@ -147,27 +147,32 @@ class TestGetRawRecipes:
         assert "ignore.xyz" not in names
 
 
-class TestGetExistingProcessedRecipes:
-    """Tests for detecting already-processed recipes."""
+class TestProcessedManifest:
+    """Tests for the manifest that tracks already-processed recipes.
 
-    def test_get_existing_processed_recipes(self, tmp_path, monkeypatch):
-        # Create temp directory with processed files
-        processed_dir = tmp_path / "processed-recipes"
-        processed_dir.mkdir()
-        (processed_dir / "african-curried-soup.md").write_text("# African Curried Soup")
-        (processed_dir / "chicken-vindaloo.md").write_text("# Chicken Vindaloo")
-        (processed_dir / "_missing_ratings.md").write_text("# Missing")
+    main() skips any raw file whose name is already a key in
+    _processed_manifest.json (raw filename -> processed filename).
+    """
 
-        # Monkeypatch the PROCESSED_RECIPES_DIR
+    def test_load_manifest_returns_empty_dict_when_missing(self, tmp_path, monkeypatch):
         import transform_recipes
 
-        monkeypatch.setattr(transform_recipes, "PROCESSED_RECIPES_DIR", processed_dir)
+        monkeypatch.setattr(transform_recipes, "MANIFEST_FILE", tmp_path / "_processed_manifest.json")
 
-        existing = get_existing_processed_recipes()
+        assert load_manifest() == {}
 
-        assert "african-curried-soup" in existing
-        assert "chicken-vindaloo" in existing
-        assert "_missing_ratings" not in existing  # Should be excluded
+    def test_save_then_load_manifest_round_trips(self, tmp_path, monkeypatch):
+        import transform_recipes
+
+        monkeypatch.setattr(transform_recipes, "MANIFEST_FILE", tmp_path / "_processed_manifest.json")
+        manifest = {
+            "chicken_vindaloo.pdf": "chicken-vindaloo.md",
+            "african soup.jpg": "african-curried-soup.md",
+        }
+
+        save_manifest(manifest)
+
+        assert load_manifest() == manifest
 
 
 class TestMissingRatingsDetection:
@@ -197,9 +202,10 @@ class TestProcessRecipeMocked:
             "# Test Recipe\n\nRating: [MISSING]\n\n## Ingredients\n\n- 1 cup flour"
         )
 
-        result = process_markdown(test_file)
+        result = process_markdown(test_file, "Test Recipe")
 
         mock_gpt4o.assert_called_once()
+        assert mock_gpt4o.call_args.args[1] == "Test Recipe"
         assert "# Test Recipe" in result
 
     @patch("transform_recipes.call_gpt4o_vision")
@@ -219,10 +225,11 @@ class TestProcessRecipeMocked:
 
         mock_gpt4o.return_value = "# PDF Recipe\n\nRating: 7/10\n\n## Ingredients"
 
-        result = process_pdf(test_file)
+        result = process_pdf(test_file, "PDF Recipe")
 
         mock_convert.assert_called_once()
         mock_gpt4o.assert_called_once()
+        assert mock_gpt4o.call_args.args[1] == "PDF Recipe"
         assert "# PDF Recipe" in result
 
     @patch("transform_recipes.call_gpt4o_vision")
@@ -237,24 +244,26 @@ class TestProcessRecipeMocked:
 
         mock_gpt4o.return_value = "# Image Recipe\n\nRating: 9/10\n\n## Ingredients"
 
-        result = process_image(test_file)
+        result = process_image(test_file, "Image Recipe")
 
         mock_gpt4o.assert_called_once()
+        assert mock_gpt4o.call_args.args[1] == "Image Recipe"
         assert "# Image Recipe" in result
 
 
 class TestSaveProcessedRecipe:
     """Tests for saving processed recipes."""
 
-    def test_save_processed_recipe(self, tmp_path, monkeypatch):
-        # Monkeypatch the output directory
+    def test_save_processed_recipe_names_file_from_original_filename(self, tmp_path, monkeypatch):
+        # The output name comes from the raw file's name, not the LLM's H1 header,
+        # so the user's own naming survives the transform.
         import transform_recipes
         from transform_recipes import save_processed_recipe
 
         monkeypatch.setattr(transform_recipes, "PROCESSED_RECIPES_DIR", tmp_path)
 
-        content = "# African Curried Soup\n\nRating: 8/10\n\n## Ingredients"
-        original_path = Path("/fake/path/AfricanCurriedSoup.md")
+        content = "# Curried Peanut Soup\n\nRating: 8/10\n\n## Ingredients"
+        original_path = Path("/fake/path/African Curried Soup.md")
 
         output_path = save_processed_recipe(content, original_path)
 

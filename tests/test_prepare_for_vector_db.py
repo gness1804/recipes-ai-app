@@ -11,9 +11,8 @@ Tests cover:
 import json
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 
 # Add scripts directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
@@ -226,7 +225,7 @@ class TestLLMClassifier:
     """Tests for the LLM classifier module with mocked API calls."""
 
     def test_classify_recipe_returns_expected_structure(self, tmp_path, monkeypatch):
-        from llm_classifier import classify_recipe, CACHE_FILE
+        from llm_classifier import classify_recipe
 
         # Mock the cache file location
         cache_file = tmp_path / "test_cache.json"
@@ -269,7 +268,7 @@ class TestLLMClassifier:
         assert result["prepTimeMinutes"] == 30
 
     def test_classify_recipe_uses_cache(self, tmp_path, monkeypatch):
-        from llm_classifier import classify_recipe, load_cache, save_cache
+        from llm_classifier import classify_recipe
 
         # Set up cache location
         cache_dir = tmp_path / "cache"
@@ -359,7 +358,6 @@ class TestDiscoveredEnums:
             classify_recipe,
             get_discovered_enums,
             discovered_enums,
-            BASE_ENUMS,
         )
 
         # Reset discovered enums
