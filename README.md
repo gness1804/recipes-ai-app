@@ -143,3 +143,7 @@ To add a new raw recipe (such as a Word document, PDF, or image) and sync it wit
 - `utils/llm_helper.py` — Recipe response generation and fallback
 - `utils/sparse_helper.py` — BM25-style sparse encoder for hybrid search
 - `data/` — Recipe seed data and combined records
+
+## License
+
+MIT. See [LICENSE](LICENSE).
