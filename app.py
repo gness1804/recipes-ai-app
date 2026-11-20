@@ -463,7 +463,24 @@ def _render_chat() -> None:
         # Render message history
         for msg in messages:
             with st.chat_message(msg["role"]):
-                st.markdown(msg["content"], unsafe_allow_html=True)
+                _render_message(msg)
+
+
+def _render_message(msg: dict) -> None:
+    """Render one chat message's body inside the current chat bubble.
+
+    Message text comes from the user, the LLM, or exception details, so it is
+    rendered with HTML disabled: Streamlit shows any tags as literal text.
+    Only the source badge is rendered as HTML, and it is rebuilt here from
+    fixed strings by `_source_badge`, so no HTML is ever stored in a message.
+    """
+    st.markdown(msg["content"])
+    if "source" in msg:
+        st.markdown("---")
+        st.markdown(
+            _source_badge(msg["source"], msg["owner"]),
+            unsafe_allow_html=True,
+        )
 
 
 def _prepare_conversation(user_query: str) -> tuple[int, str] | None:
@@ -626,16 +643,18 @@ def main() -> None:
                         )
 
                     if error:
-                        content = error
-                        st.warning(content)
+                        message = {"role": "assistant", "content": error}
+                        st.warning(error)
                     else:
-                        badge = _source_badge(source, owner)
-                        content = f"{text}\n\n---\n\n{badge}"
-                        st.markdown(content, unsafe_allow_html=True)
+                        message = {
+                            "role": "assistant",
+                            "content": text,
+                            "source": source,
+                            "owner": owner,
+                        }
+                        _render_message(message)
 
-                st.session_state.conversations[conv_idx]["messages"].append(
-                    {"role": "assistant", "content": content}
-                )
+                st.session_state.conversations[conv_idx]["messages"].append(message)
                 st.rerun()
 
 
